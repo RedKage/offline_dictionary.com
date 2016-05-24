@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "offline_dictionary.com_read
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "offline_dictionary.com_export_xdxf", "offline_dictionary.com_export_xdxf\offline_dictionary.com_export_xdxf.csproj", "{48C4741D-4992-42F3-90D6-50645B1C9A25}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "offline_dictionary.com_export_stardict", "offline_dictionary.com_export_stardict\offline_dictionary.com_export_stardict.csproj", "{79495F35-AE3D-4EB3-AB24-225BA08580DE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +43,14 @@ Global
 		{48C4741D-4992-42F3-90D6-50645B1C9A25}.Release|Any CPU.Build.0 = Release|Any CPU
 		{48C4741D-4992-42F3-90D6-50645B1C9A25}.Release|x64.ActiveCfg = Release|Any CPU
 		{48C4741D-4992-42F3-90D6-50645B1C9A25}.Release|x64.Build.0 = Release|Any CPU
+		{79495F35-AE3D-4EB3-AB24-225BA08580DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79495F35-AE3D-4EB3-AB24-225BA08580DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79495F35-AE3D-4EB3-AB24-225BA08580DE}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{79495F35-AE3D-4EB3-AB24-225BA08580DE}.Debug|x64.Build.0 = Debug|Any CPU
+		{79495F35-AE3D-4EB3-AB24-225BA08580DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79495F35-AE3D-4EB3-AB24-225BA08580DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79495F35-AE3D-4EB3-AB24-225BA08580DE}.Release|x64.ActiveCfg = Release|Any CPU
+		{79495F35-AE3D-4EB3-AB24-225BA08580DE}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

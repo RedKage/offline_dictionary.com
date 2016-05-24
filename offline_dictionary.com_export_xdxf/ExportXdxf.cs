@@ -121,13 +121,13 @@ namespace offline_dictionary.com_export_xdxf
             {
                 ExportingProgressInfo exportingProgressInfo = new ExportingProgressInfo
                 {
-                    WordsCountToWrite = genericDictionary.AllWords.Keys.Count,
+                    WordsCountToWrite = genericDictionary.AllWords.Count,
                     WordsWritten = 0
                 };
 
                 foreach (KeyValuePair<Meaning, List<Definition>> article in genericDictionary.AllWords)
                 {
-                    CreateArticle(xmlWriter, article.Key, article.Value.ToArray());
+                    CreateArticle(xmlWriter, article.Key, article.Value);
                     exportingProgressInfo.WordsWritten++;
 
                     if (progress != null && exportingProgressInfo.WordsWritten % 100 == 0)

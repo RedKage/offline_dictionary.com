@@ -145,6 +145,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\offline_dictionary.com_export_stardict\offline_dictionary.com_export_stardict.csproj">
+      <Project>{79495F35-AE3D-4EB3-AB24-225BA08580DE}</Project>
+      <Name>offline_dictionary.com_export_stardict</Name>
+    </ProjectReference>
     <ProjectReference Include="..\offline_dictionary.com_export_xdxf\offline_dictionary.com_export_xdxf.csproj">
       <Project>{48C4741D-4992-42F3-90D6-50645B1C9A25}</Project>
       <Name>offline_dictionary.com_export_xdxf</Name>

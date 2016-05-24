@@ -9,6 +9,7 @@ namespace offline_dictionary.com_reader.Model
         public string FullName { get; set; }
         public string Description { get; set; }
         public string Version { get; set; }
+        public string Website { get; set; }
 
         public override string ToString()
         {

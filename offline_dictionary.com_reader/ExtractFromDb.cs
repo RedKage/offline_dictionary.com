@@ -15,9 +15,14 @@ namespace offline_dictionary.com_reader
 {
     public class ExtractFromDb
     {
-        private const int DebugLimit = 500; //500; debug
-
+#if DEBUG
+        private const int DebugLimit = 50;
+#endif
+#if !DEBUG
+        private const int DebugLimit = -1;
+#endif
         private const string DictionayName = "dictionary.com";
+        private const string DictionayWebsite = "http://www.dictionary.com";
         private const string DictionayFullName = "Dictionary.com Unabridged";
         private const string DictionayDescription = "Dictionary.com Unabridged. Based on the Random House Dictionary, © Random House, Inc. 2016";
         private const string DictionayVersion = "5.5.2_08-08"; // app version + sqlite file version
@@ -45,6 +50,7 @@ namespace offline_dictionary.com_reader
                 Name = DictionayName,
                 FullName = DictionayFullName,
                 Description = DictionayDescription,
+                Website = DictionayWebsite,
                 Version = DictionayVersion
             };
 
@@ -276,6 +282,9 @@ namespace offline_dictionary.com_reader
 
                 // Encapsulate text nodes so we are sure there are no text left between closed tags...
                 text = $"<span>{text}</span>";
+                text = text.Replace("\r\n", "<br />");
+                text = text.Replace("\r", "<br />");
+                text = text.Replace("\n", "<br />");
 
                 // Re-inject
                 HtmlNode newChild = HtmlNode.CreateNode(text);
@@ -309,11 +318,6 @@ namespace offline_dictionary.com_reader
             string cleanHtml = agileHtmlDocument.DocumentNode.InnerText;
             cleanHtml = HttpUtility.HtmlDecode(cleanHtml);
             cleanHtml = HttpUtility.HtmlDecode(cleanHtml);
-
-            // Escape invalid characters for XML: (') and (") ARE valid within tags, but NOT in attributes
-            cleanHtml = cleanHtml.Replace("&", "&amp;");
-            cleanHtml = cleanHtml.Replace("<", "&lt;");
-            cleanHtml = cleanHtml.Replace(">", "&gt;");
 
             return cleanHtml;
         }

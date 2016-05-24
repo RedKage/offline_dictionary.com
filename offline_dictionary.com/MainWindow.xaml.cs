@@ -1,4 +1,5 @@
 ﻿using System;
+using offline_dictionary.com_export_stardict;
 using offline_dictionary.com_export_xdxf;
 using offline_dictionary.com_reader;
 using offline_dictionary.com_reader.Model;
@@ -9,7 +10,7 @@ namespace offline_dictionary.com
     {
         //private static string DbFilePath = @"Dictionaries\dictionary.com_5.2.2\android-08-08-primary.sqlite";
         private const string DbFilePath = @"F:\android-08-08-primary.sqlite";
-        private const string OutDirPath = @"D:\Work\Dev\offline_dictionary.com\out";
+        private const string OutDirPath = @"D:\Work\Dev\offline_dictionary.com\out\X-StarDict_3.0.4_rev10\Bin\StarDict\dic\dictionary.com-5.5.2_08-08";
 
         public GenericDictionary Dictionary { get; set; }
 
@@ -51,7 +52,7 @@ namespace offline_dictionary.com
             ConvertToXdxfButton.IsEnabled = true;
             ConvertToStarDictButton.IsEnabled = true;
 
-            ConsoleOut($"Extracting done:");
+            ConsoleOut("Extracting done:");
             ConsoleOut($"{Dictionary}{Environment.NewLine}");
         }
 
@@ -69,9 +70,18 @@ namespace offline_dictionary.com
             ConsoleOut($"Exported!{Environment.NewLine}");
         }
 
-        private void ConvertToStarDictButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        private async void ConvertToStarDictButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
+            ConsoleOut($"Exporting to StarDict in {OutDirPath} ...");
 
+            ExportStarDict exportStarDict = new ExportStarDict(Dictionary, OutDirPath);
+
+            Progress<ExportingProgressInfo> exportingProgress = new Progress<ExportingProgressInfo>();
+            exportingProgress.ProgressChanged += ExportCheck;
+
+            await exportStarDict.ExportAsync(exportingProgress);
+
+            ConsoleOut($"Exported!{Environment.NewLine}");
         }
     }
 }

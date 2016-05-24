@@ -205,3 +205,5 @@ FakesAssemblies/
 
 *.sqlite
 *.sqlite-journal
+
+out/
