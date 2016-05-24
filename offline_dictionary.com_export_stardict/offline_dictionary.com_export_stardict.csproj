@@ -55,6 +55,9 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <Content Include="dictzip.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Specs\HowToCreateDictionary.txt" />
     <Content Include="Specs\StarDictFileFormat.txt" />
   </ItemGroup>

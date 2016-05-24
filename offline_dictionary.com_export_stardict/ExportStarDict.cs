@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,6 +18,8 @@ namespace offline_dictionary.com_export_stardict
         private readonly string _outputDirPath;
         private readonly GenericDictionary _genericDictionary;
         private readonly List<string> _sortedWords;
+        private static readonly byte[] NUL = { 0 };
+        private static readonly string DictZipBinaryPath = $@"{AppDomain.CurrentDomain.BaseDirectory}\dictzip.exe";
 
         public ExportStarDict(GenericDictionary genericDictionary, string outputDirPath)
         {
@@ -26,35 +30,34 @@ namespace offline_dictionary.com_export_stardict
 
         public async Task ExportAsync(IProgress<ExportingProgressInfo> progress)
         {
-            long idxFileSizeBytes = await CreateDict(progress);
+            string basePath = $@"{_outputDirPath}\{_genericDictionary.Name}-{_genericDictionary.Version}";
 
-            CreateIfo(idxFileSizeBytes);
+            string outDictFilePath = $@"{basePath}.dict";
+            string outIdxFilePath = $@"{basePath}.idx";
+            string outIdxGzFilePath = $@"{outIdxFilePath}.gz";
+            string outIfoFilePath = $@"{basePath}.ifo";
+            
+            long idxFileSizeBytes = await CreateDict(progress, outDictFilePath, outIdxFilePath);
+
+            CompressIdx(outIdxFilePath, outIdxGzFilePath);
+            CompressDictZip(outDictFilePath);
+            CreateIfo(outIfoFilePath, idxFileSizeBytes);
         }
 
-        private async Task<long> CreateDict(IProgress<ExportingProgressInfo> progress)
+        private async Task<long> CreateDict(IProgress<ExportingProgressInfo> progress, string targetDictFilePath, string targetIdxFilePath)
         {
-            string outDictFilePath = $@"{_outputDirPath}\{_genericDictionary.Name}-{_genericDictionary.Version}.dict";
-            string outIdxFilePath = $@"{_outputDirPath}\{_genericDictionary.Name}-{_genericDictionary.Version}.idx";
-
             long idxFileSizeBytes = 0;
-            byte[] nul = { 0 };
 
             Task export = new Task(() =>
             {
-                using (FileStream dictStream = new FileStream(outDictFilePath, FileMode.Create))
+                using (FileStream dictStream = new FileStream(targetDictFilePath, FileMode.Create))
                 {
                     using (BinaryWriter dictWriter = new BinaryWriter(dictStream, Encoding.UTF8))
                     {
-                        using (FileStream idxSteam = new FileStream(outIdxFilePath, FileMode.Create))
+                        using (FileStream idxSteam = new FileStream(targetIdxFilePath, FileMode.Create))
                         {
                             using (BinaryWriter idxWriter = new BinaryWriter(idxSteam, Encoding.UTF8))
                             {
-                                ExportingProgressInfo exportingProgressInfo = new ExportingProgressInfo
-                                {
-                                    WordsCountToWrite = _genericDictionary.AllWords.Count,
-                                    WordsWritten = 0
-                                };
-
                                 // Get all words and put them into a list
                                 _sortedWords.AddRange(_genericDictionary.AllWords.Keys.Select(k => k.Word));
 
@@ -64,51 +67,7 @@ namespace offline_dictionary.com_export_stardict
                                 // Browse alphabetically
                                 foreach (string word in _sortedWords)
                                 {
-                                    var articlesForWord = _genericDictionary.AllWords.Where(w => w.Key.Word == word).OrderBy(w => w.Key.Id);
-                                    foreach (KeyValuePair<Meaning, List<Definition>> article in articlesForWord)
-                                    {
-                                        Meaning meaning = article.Key;
-
-                                        // word_str
-                                        if (meaning.Word.Length >= 256)
-                                            throw new NotSupportedException();
-
-                                        idxWriter.Write(Encoding.UTF8.GetBytes(meaning.Word));
-                                        idxWriter.Write(nul);
-
-                                        // word_data_offset
-                                        uint definitionPostionBegin = Convert.ToUInt32(dictStream.Position);
-                                        idxWriter.Write(ToBigEndian(definitionPostionBegin));
-
-                                        // Re-order definitions
-                                        List<Definition> definitions = article.Value;
-                                        List<Definition> orderedDefinitions =
-                                            definitions
-                                                .OrderBy(d => d.MeaningId)
-                                                .ThenBy(d => d.Position)
-                                                .Distinct()
-                                                .ToList();
-
-                                        // Write definitions in .dict
-                                        foreach (Definition definition in orderedDefinitions)
-                                        {
-                                            dictWriter.Write(Encoding.UTF8.GetBytes(definition.DefinitionHtml));
-                                        }
-
-                                        // word_data_size;
-                                        uint definitionPostionEnd = Convert.ToUInt32(dictStream.Position);
-                                        idxWriter.Write(ToBigEndian(definitionPostionEnd - definitionPostionBegin));
-
-                                        // Alternate keywords todo SYN
-                                        //foreach (string word in meaning.AlternateWords)
-                                        //{
-                                        //}
-
-                                        exportingProgressInfo.WordsWritten++;
-
-                                        if (progress != null && exportingProgressInfo.WordsWritten % 100 == 0)
-                                            progress.Report(exportingProgressInfo);
-                                    }
+                                    WriteWord(progress, word, idxWriter, dictWriter);
                                 }
 
                                 idxFileSizeBytes = idxSteam.Length;
@@ -123,14 +82,58 @@ namespace offline_dictionary.com_export_stardict
             return idxFileSizeBytes;
         }
 
-        private void CreateIfo(long idxFileSizeBytes)
+        private void CompressIdx(string targetIdxFilePath, string outIdxGzFilePath, bool removeDict = true)
         {
-            string outFilePath = $@"{_outputDirPath}\{_genericDictionary.Name}-{_genericDictionary.Version}.ifo";
+            using (FileStream inDictStream = new FileStream(targetIdxFilePath, FileMode.Open))
+            {
+                using (FileStream outDictStream = new FileStream(outIdxGzFilePath, FileMode.Create))
+                {
+                    using (GZipStream dictZipStream = new GZipStream(outDictStream, CompressionLevel.Optimal, false))
+                    {
+                        inDictStream.CopyTo(dictZipStream);
+                    }
+                }
+            }
 
-            using (TextWriter textWriter = new StreamWriter(outFilePath, false, new UTF8Encoding(false)))
+            if (removeDict)
+                File.Delete(targetIdxFilePath);
+        }
+
+        private static void CompressDictZip(string targetDict, bool removeDict = true)
+        {
+            if (!File.Exists(targetDict))
+                throw new FileNotFoundException(targetDict, targetDict);
+
+            FileInfo targetDictInfo = new FileInfo(targetDict);
+
+            if (targetDictInfo.Directory == null)
+                throw new DirectoryNotFoundException(targetDict);
+
+            ProcessStartInfo startInfo = new ProcessStartInfo
+            {
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                FileName = DictZipBinaryPath,
+                WorkingDirectory = targetDictInfo.Directory.FullName,
+                WindowStyle = ProcessWindowStyle.Hidden,
+                Arguments = $"--force {(removeDict ? string.Empty : "--keep")} \"{targetDictInfo.Name}\""
+            };
+
+            using (Process exeProcess = Process.Start(startInfo))
+            {
+                if(exeProcess == null)
+                    throw new NullReferenceException($"{startInfo.FileName} {startInfo.Arguments}");
+
+                exeProcess.WaitForExit();
+            }
+        }
+
+        private void CreateIfo(string targetIfoFilePath, long idxFileSizeBytes)
+        {
+            using (TextWriter textWriter = new StreamWriter(targetIfoFilePath, false, new UTF8Encoding(false)))
             {
                 textWriter.NewLine = "\n";
-                
+
                 DateTime utcNow = DateTime.UtcNow;
 
                 textWriter.WriteLine("StarDict's dict ifo file");
@@ -145,9 +148,77 @@ namespace offline_dictionary.com_export_stardict
             }
         }
 
-        private void CreateGzipDict()
+        private void WriteWord(IProgress<ExportingProgressInfo> progress, string word, BinaryWriter idxWriter, BinaryWriter dictWriter)
         {
+            ExportingProgressInfo exportingProgressInfo = new ExportingProgressInfo
+            {
+                WordsCountToWrite = _genericDictionary.AllWords.Count,
+                WordsWritten = 0
+            };
 
+            // word_str
+            if (word.Length >= 256)
+                throw new NotSupportedException(); // todo handle this
+
+            idxWriter.Write(Encoding.UTF8.GetBytes(word));
+            idxWriter.Write(NUL);
+
+            // word_data_offset
+            uint definitionPostionBegin = Convert.ToUInt32(dictWriter.BaseStream.Position);
+            idxWriter.Write(ToBigEndian(definitionPostionBegin));
+
+            // Get meanings linked to the same words (homonyms)
+            var articlesForWord = _genericDictionary.AllWords.Where(w => w.Key.Word == word).OrderBy(w => w.Key.Id);
+
+            // Put each meaning in the whole definition, numbering them
+            int meaningIndex = 0;
+            foreach (KeyValuePair<Meaning, List<Definition>> article in articlesForWord)
+            {
+                meaningIndex++;
+                Meaning meaning = article.Key;
+
+                // Add a meaning in the definition + a numbered bullet point
+                WriteWordMeaningHtmlHeader(dictWriter, meaningIndex, meaning);
+
+                // Re-order definitions
+                List<Definition> orderedDefinitions =
+                    article.Value
+                        .OrderBy(d => d.MeaningId)
+                        .ThenBy(d => d.Position)
+                        .Distinct()
+                        .ToList();
+
+                // Write definitions for this meaning one after the other
+                foreach (Definition definition in orderedDefinitions)
+                {
+                    dictWriter.Write(Encoding.UTF8.GetBytes(definition.DefinitionHtml));
+                }
+
+                // word_data_size;
+                uint definitionPostionEnd = Convert.ToUInt32(dictWriter.BaseStream.Position);
+                idxWriter.Write(ToBigEndian(definitionPostionEnd - definitionPostionBegin));
+
+                // Alternate keywords todo SYN
+                //foreach (string word in meaning.AlternateWords)
+                //{
+                //}
+
+                exportingProgressInfo.WordsWritten++;
+
+                if (progress != null && exportingProgressInfo.WordsWritten % 100 == 0)
+                    progress.Report(exportingProgressInfo);
+            }
+        }
+
+        private static void WriteWordMeaningHtmlHeader(BinaryWriter dictWriter, int meaningIndex, Meaning meaning)
+        {
+            string htmlHeader =
+                $@"<b>{meaningIndex}. {meaning.Word}</b><br />
+                <span>IPA: /{meaning.PronounciationIpa}/</span><br />
+                <span>Spell: [{meaning.PronounciationSpell}]</span><br />
+                <span>Syllable: {meaning.Syllable}</span><br />";
+
+            dictWriter.Write(Encoding.UTF8.GetBytes(htmlHeader));
         }
 
         private byte[] ToBigEndian(uint stuff)
