@@ -140,7 +140,7 @@ namespace offline_dictionary.com_export_stardict
                 textWriter.WriteLine($"version={StarDictVersion}");
                 textWriter.WriteLine($"wordcount={_genericDictionary.AllWords.Count}");
                 textWriter.WriteLine($"idxfilesize={idxFileSizeBytes}");
-                textWriter.WriteLine($"bookname={_genericDictionary.FullName} ({_genericDictionary.Version})");
+                textWriter.WriteLine($"bookname={_genericDictionary.Name} ({_genericDictionary.Version})");
                 textWriter.WriteLine($"date={utcNow.Year}.{utcNow.Month:00}.{utcNow.Day:00}");
                 textWriter.WriteLine($"website={_genericDictionary.Website}");
                 textWriter.WriteLine($"description={_genericDictionary.Description}");
@@ -213,10 +213,11 @@ namespace offline_dictionary.com_export_stardict
         private static void WriteWordMeaningHtmlHeader(BinaryWriter dictWriter, int meaningIndex, Meaning meaning)
         {
             string htmlHeader =
-                $@"<b>{meaningIndex}. {meaning.Word}</b><br />
-                <span>IPA: /{meaning.PronounciationIpa}/</span><br />
-                <span>Spell: [{meaning.PronounciationSpell}]</span><br />
-                <span>Syllable: {meaning.Syllable}</span><br />";
+$@"{(meaningIndex>1 ? "<br>" : string.Empty)}
+<b>{meaningIndex}. {meaning.Word}</b><br>
+    <span>IPA: /{meaning.PronounciationIpa}/</span><br>
+    <span>Spell: [{meaning.PronounciationSpell}]</span><br>
+    <span>Syllable: {meaning.Syllable}</span><br>";
 
             dictWriter.Write(Encoding.UTF8.GetBytes(htmlHeader));
         }

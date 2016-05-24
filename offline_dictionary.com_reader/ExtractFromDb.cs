@@ -16,7 +16,7 @@ namespace offline_dictionary.com_reader
     public class ExtractFromDb
     {
 #if DEBUG
-        private const int DebugLimit = 50;
+        private const int DebugLimit = 200;
 #endif
 #if !DEBUG
         private const int DebugLimit = -1;
@@ -282,9 +282,9 @@ namespace offline_dictionary.com_reader
 
                 // Encapsulate text nodes so we are sure there are no text left between closed tags...
                 text = $"<span>{text}</span>";
-                text = text.Replace("\r\n", "<br />");
-                text = text.Replace("\r", "<br />");
-                text = text.Replace("\n", "<br />");
+                text = text.Replace("\r\n", "<br>");
+                text = text.Replace("\r", "<br>");
+                text = text.Replace("\n", "<br>");
 
                 // Re-inject
                 HtmlNode newChild = HtmlNode.CreateNode(text);
