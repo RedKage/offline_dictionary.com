@@ -9,32 +9,33 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using HtmlAgilityPack;
-using offline_dictionary.com_reader.Model;
 using offline_dictionary.com_shared;
+using offline_dictionary.com_shared.Model;
 
-namespace offline_dictionary.com_reader
+namespace offline_dictionary.com_reader_sqlite
 {
-    public class ExtractFromDb
+    public class LoadFromSqlite
     {
-#if DEBUG
-        private const int DebugLimit = 200;
-#endif
-#if !DEBUG
-        private const int DebugLimit = -1;
-#endif
-        private const string DictionayName = "dictionary.com";
-        private const string DictionayWebsite = "http://www.dictionary.com";
-        private const string DictionayFullName = "Dictionary.com Unabridged";
+        private const string DictionayName =
+            "dictionary.com";
+
+        private const string DictionayWebsite =
+            "http://www.dictionary.com";
+
+        private const string DictionayFullName =
+            "Dictionary.com Unabridged";
 
         private const string DictionayDescription =
             "Dictionary.com Unabridged. Based on the Random House Dictionary, © Random House, Inc. 2016";
 
-        private const string DictionayVersion = "5.5.2_08-08"; // app version + sqlite file version
+        private const string DictionayVersion =
+            "5.5.2_08-08"; // app version + sqlite file version
 
         private readonly GenericDictionary _genericDictionary;
         private static string _connectionString;
+        private static int _loadWordsLimit;
 
-        public ExtractFromDb(string dbFilePath)
+        public LoadFromSqlite(string dbFilePath, int loadWordsLimit = -1)
         {
             var connectionStringParams = new SQLiteConnectionStringBuilder
             {
@@ -59,14 +60,15 @@ namespace offline_dictionary.com_reader
             };
 
             _connectionString = connectionStringParams.ToString();
+            _loadWordsLimit = loadWordsLimit;
         }
 
-        public async Task<GenericDictionary> ExtractAsync(IProgress<ExtractingProgressInfo> progress)
+        public async Task<GenericDictionary> LoadAsync(IProgress<LoadingProgressInfo> progress)
         {
             List<Task> tasks = new List<Task>();
 
             // Browse each word from entry table
-            foreach (Meaning currentMeaning in GetAllWords(DebugLimit))
+            foreach (Meaning currentMeaning in GetAllWords(_loadWordsLimit))
             {
                 Task item = new Task(() => UpdateBigAssDictionary(currentMeaning));
                 item.Start();
@@ -74,13 +76,13 @@ namespace offline_dictionary.com_reader
                 tasks.Add(item);
             }
 
-            Task<GenericDictionary> extract = new Task<GenericDictionary>(() =>
+            Task<GenericDictionary> loadTask = new Task<GenericDictionary>(() =>
             {
                 while (true)
                 {
                     Thread.Sleep(1000);
 
-                    ExtractingProgressInfo extractingProgressInfo = new ExtractingProgressInfo
+                    LoadingProgressInfo loadingProgressInfo = new LoadingProgressInfo
                     {
                         WordsCountToAdd = tasks.Count,
                         WordsAdded = tasks.Count(t => t.IsCompleted)
@@ -89,17 +91,17 @@ namespace offline_dictionary.com_reader
                     //tasks.RemoveAll(t => t.IsCompleted); // todo fixes stuck tasks?
 
                     if (progress != null)
-                        progress.Report(extractingProgressInfo);
+                        progress.Report(loadingProgressInfo);
 
-                    if (extractingProgressInfo.WordsAdded >= extractingProgressInfo.WordsCountToAdd)
+                    if (loadingProgressInfo.WordsAdded >= loadingProgressInfo.WordsCountToAdd)
                         break;
                 }
 
                 return _genericDictionary;
             }, TaskCreationOptions.LongRunning);
-            extract.Start();
+            loadTask.Start();
 
-            return await extract;
+            return await loadTask;
         }
 
         private void UpdateBigAssDictionary(Meaning currentMeaning)
@@ -274,6 +276,7 @@ namespace offline_dictionary.com_reader
             HtmlNodeCollection textNodes =
                 agileHtmlDocument.DocumentNode.SelectNodes(
                     "//text()[(normalize-space(.) != '') and not(parent::script) and not(*)]");
+
             foreach (HtmlNode htmlNode in textNodes)
             {
                 string text = htmlNode.InnerText;
@@ -287,11 +290,18 @@ namespace offline_dictionary.com_reader
                 text = text.Replace("<", "&lt;");
                 text = text.Replace(">", "&gt;");
 
+                // Convert line breaks to Unix style
+                text = text.Replace("\r\n", "\n");
+                text = text.Replace("\r", "\n");
+
                 // Encapsulate text nodes so we are sure there are no text left between closed tags...
                 text = $"<span>{text}</span>";
-                text = text.Replace("\r\n", "<br>");
-                text = text.Replace("\r", "<br>");
-                text = text.Replace("\n", "<br>");
+
+                // Convert tabs to 4 spaces
+                text = text.Replace("\t", "    ");
+                
+                // Add <br/> for each line break
+                text = text.Replace("\n", "<br/>\n");
 
                 // Re-inject
                 HtmlNode newChild = HtmlNode.CreateNode(text);
@@ -300,11 +310,8 @@ namespace offline_dictionary.com_reader
 
             string innerHtml = agileHtmlDocument.DocumentNode.InnerHtml;
 
-            // Try to reduce lines height because of long ass text() between nodes but...
-            // .. but then there are line-breaks everywhere :/
-            //innerHtml = innerHtml.Replace("\r", "");
-            //innerHtml = innerHtml.Replace("\n", "");
-            //innerHtml = XmlEndTagRegex.Replace(innerHtml, "$1\r\n");
+            // Weird but it seems agileHtmlDocument fucks my <br/> and transforms them into crappy <br>
+            innerHtml = innerHtml.Replace("<br>", "<br/>");
 
             return innerHtml;
         }

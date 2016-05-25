@@ -6,15 +6,12 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Schema;
-using offline_dictionary.com_reader.Model;
 using offline_dictionary.com_shared;
+using offline_dictionary.com_shared.Model;
 
 namespace offline_dictionary.com_export_xdxf
 {
-    /// <summary>
-    /// https://github.com/soshial/xdxf_makedict/tree/master/format_standard
-    /// </summary>
-    public class ExportXdxf
+    public class ExportXdxf : IExporter
     {
         public const string XdxfVersion = "032beta";
 
@@ -22,7 +19,7 @@ namespace offline_dictionary.com_export_xdxf
         {
             Indent = true,
             IndentChars = "\t",
-            NewLineChars = "\r\n",
+            NewLineChars = "\n",
             NewLineHandling = NewLineHandling.Replace,
             Encoding = Encoding.Unicode,
             CheckCharacters = true,
@@ -180,20 +177,27 @@ namespace offline_dictionary.com_export_xdxf
                 //def.InsertBefore(gr, first);
 
                 // Transcription/pronunciation 
-                xmlWriter.WriteStartElement("tr");
-                xmlWriter.WriteAttributeString("format", "IPA");
-                xmlWriter.WriteRaw($"IPA: /{meaning.PronounciationIpa}");
-                xmlWriter.WriteEndElement();
-
-                xmlWriter.WriteStartElement("tr");
-                xmlWriter.WriteAttributeString("format", "Spelling");
-                xmlWriter.WriteRaw($"Spell: [{meaning.PronounciationSpell}]");
-                xmlWriter.WriteEndElement();
-
-                xmlWriter.WriteStartElement("tr");
-                xmlWriter.WriteAttributeString("format", "Syllable");
-                xmlWriter.WriteRaw($"Syllable: {meaning.Syllable}");
-                xmlWriter.WriteEndElement();
+                if (!string.IsNullOrWhiteSpace(meaning.PronounciationIpa))
+                {
+                    xmlWriter.WriteStartElement("tr");
+                    xmlWriter.WriteAttributeString("format", "IPA");
+                    xmlWriter.WriteRaw($"IPA: /{meaning.PronounciationIpa}");
+                    xmlWriter.WriteEndElement();
+                }
+                if (!string.IsNullOrWhiteSpace(meaning.PronounciationSpell))
+                {
+                    xmlWriter.WriteStartElement("tr");
+                    xmlWriter.WriteAttributeString("format", "Spelling");
+                    xmlWriter.WriteRaw($"Spell: [{meaning.PronounciationSpell}]");
+                    xmlWriter.WriteEndElement();
+                }
+                if (!string.IsNullOrWhiteSpace(meaning.Syllable))
+                {
+                    xmlWriter.WriteStartElement("tr");
+                    xmlWriter.WriteAttributeString("format", "Syllable");
+                    xmlWriter.WriteRaw($"Syllable: {meaning.Syllable}");
+                    xmlWriter.WriteEndElement();
+                }
 
                 // Internet ressource shows in the definition, not good for now
                 //XmlElement iref = xml.CreateElement("rref");

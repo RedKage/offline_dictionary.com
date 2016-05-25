@@ -62,9 +62,9 @@
     <None Include="Specs\xdxf_strict.dtd" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\offline_dictionary.com_reader\offline_dictionary.com_reader.csproj">
+    <ProjectReference Include="..\offline_dictionary.com_reader\offline_dictionary.com_reader_sqlite.csproj">
       <Project>{91187D5E-19D8-4802-9235-51E6819CA016}</Project>
-      <Name>offline_dictionary.com_reader</Name>
+      <Name>offline_dictionary.com_reader_sqlite</Name>
     </ProjectReference>
     <ProjectReference Include="..\offline_dictionary.com_shared\offline_dictionary.com_shared.csproj">
       <Project>{FEB051FA-8FE9-4747-AA92-39D1C958F4B5}</Project>

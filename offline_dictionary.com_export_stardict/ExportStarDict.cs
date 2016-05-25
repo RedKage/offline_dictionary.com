@@ -6,12 +6,12 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using offline_dictionary.com_reader.Model;
 using offline_dictionary.com_shared;
+using offline_dictionary.com_shared.Model;
 
 namespace offline_dictionary.com_export_stardict
 {
-    public class ExportStarDict
+    public class ExportStarDict : IExporter
     {
         public const string StarDictVersion = "2.4.2";
 
@@ -149,8 +149,7 @@ namespace offline_dictionary.com_export_stardict
             }
         }
 
-        private void WriteWord(IProgress<ExportingProgressInfo> progress, string word, BinaryWriter idxWriter,
-            BinaryWriter dictWriter)
+        private void WriteWord(IProgress<ExportingProgressInfo> progress, string word, BinaryWriter idxWriter, BinaryWriter dictWriter)
         {
             ExportingProgressInfo exportingProgressInfo = new ExportingProgressInfo
             {
@@ -207,23 +206,32 @@ namespace offline_dictionary.com_export_stardict
 
                 exportingProgressInfo.WordsWritten++;
 
-                if (progress != null && exportingProgressInfo.WordsWritten%100 == 0)
+                if (progress != null && exportingProgressInfo.WordsWritten % 100 == 0)
                     progress.Report(exportingProgressInfo);
             }
         }
 
         private static void WriteWordMeaningHtmlHeader(BinaryWriter dictWriter, int meaningIndex, Meaning meaning)
         {
-            string htmlHeader =
-                $@"{(meaningIndex > 1 ? "<br>" : string.Empty)}
-<b>{meaningIndex}. {meaning.Word}</b><br>
-    <span>IPA: /{meaning
-                    .PronounciationIpa}/</span><br>
-    <span>Spell: [{meaning.PronounciationSpell}]</span><br>
-    <span>Syllable: {meaning
-                        .Syllable}</span><br>";
+            StringBuilder htmlHeader =
+                new StringBuilder($"{(meaningIndex > 1 ? "<br>" : string.Empty)}<b>{meaningIndex}. {meaning.Word}</b><br/>\n");
 
-            dictWriter.Write(Encoding.UTF8.GetBytes(htmlHeader));
+            if (!string.IsNullOrWhiteSpace(meaning.PronounciationIpa))
+            {
+                htmlHeader.AppendFormat("    <span>IPA: /{0}/</span><br/>\n", meaning.PronounciationIpa);
+            }
+
+            if (!string.IsNullOrWhiteSpace(meaning.PronounciationSpell))
+            {
+                htmlHeader.AppendFormat("    <span>Spell: [{0}]</span><br/>\n", meaning.PronounciationSpell);
+            }
+
+            if (!string.IsNullOrWhiteSpace(meaning.Syllable))
+            {
+                htmlHeader.AppendFormat("    <span>Syllable: {0}</span><br/>\n", meaning.Syllable);
+            }
+
+            dictWriter.Write(Encoding.UTF8.GetBytes(htmlHeader.ToString()));
         }
 
         private byte[] ToBigEndian(uint stuff)

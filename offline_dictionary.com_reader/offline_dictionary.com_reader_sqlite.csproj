@@ -7,7 +7,7 @@
     <ProjectGuid>{91187D5E-19D8-4802-9235-51E6819CA016}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>offline_dictionary.com_reader</RootNamespace>
+    <RootNamespace>offline_dictionary.com_reader_sqlite</RootNamespace>
     <AssemblyName>offline_dictionary.com_reader</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -65,11 +65,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ExtractFromDb.cs" />
-    <Compile Include="Model\GenericDictionary.cs" />
-    <Compile Include="Model\Definition.cs" />
-    <Compile Include="Model\Meaning.cs" />
-    <Compile Include="Model\WordSuggestion.cs" />
+    <Compile Include="LoadFromSqlite.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

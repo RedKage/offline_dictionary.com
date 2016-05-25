@@ -1,6 +1,6 @@
 ﻿namespace offline_dictionary.com_shared
 {
-    public class ExtractingProgressInfo
+    public class LoadingProgressInfo
     {
         public int WordsCountToAdd { get; set; }
         public int WordsAdded { get; set; }

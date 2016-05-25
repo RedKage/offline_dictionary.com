@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{79495F35-AE3D-4EB3-AB24-225BA08580DE}</ProjectGuid>
+    <ProjectGuid>{6066E949-7BD5-4F0B-8579-607C53A7A9D7}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>offline_dictionary.com_export_stardict</RootNamespace>
-    <AssemblyName>offline_dictionary.com_export_stardict</AssemblyName>
+    <RootNamespace>offline_dictionary.com_export_jsondump</RootNamespace>
+    <AssemblyName>offline_dictionary.com_export_jsondump</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -30,34 +30,31 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.8.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ExportStarDict.cs" />
+    <Compile Include="ExportJsonDump.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\offline_dictionary.com_export_xdxf\offline_dictionary.com_export_xdxf.csproj">
-      <Project>{48C4741D-4992-42F3-90D6-50645B1C9A25}</Project>
-      <Name>offline_dictionary.com_export_xdxf</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\offline_dictionary.com_reader\offline_dictionary.com_reader_sqlite.csproj">
-      <Project>{91187D5E-19D8-4802-9235-51E6819CA016}</Project>
-      <Name>offline_dictionary.com_reader_sqlite</Name>
-    </ProjectReference>
     <ProjectReference Include="..\offline_dictionary.com_shared\offline_dictionary.com_shared.csproj">
       <Project>{FEB051FA-8FE9-4747-AA92-39D1C958F4B5}</Project>
       <Name>offline_dictionary.com_shared</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
-    <Content Include="dictzip.exe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Specs\HowToCreateDictionary.txt" />
-    <Content Include="Specs\StarDictFileFormat.txt" />
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

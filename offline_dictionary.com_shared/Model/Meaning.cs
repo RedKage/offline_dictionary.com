@@ -1,4 +1,4 @@
-﻿namespace offline_dictionary.com_reader.Model
+﻿namespace offline_dictionary.com_shared.Model
 {
     public class Meaning
     {

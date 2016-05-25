@@ -4,22 +4,39 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        ResizeMode="NoResize"
-        Title="MainWindow" Height="340" Width="325">
+        ResizeMode="CanResizeWithGrip"
+        Title="MainWindow"
+        Height="480" Width="640"
+        MinHeight="300" MinWidth="500">
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="50*" />
-            <RowDefinition Height="100*" />
+            <RowDefinition Height="115" />
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <Button x:Name="ExtractFromDbButton" Grid.Row="0" Content="Extract from SQLite" HorizontalAlignment="Stretch"
-                Margin="10,10,10.4,0" VerticalAlignment="Top" Click="ExtractFromDbButton_Click" />
-        <Button x:Name="ConvertToXdxfButton" Grid.Row="0" Content="Convert to XDXF" HorizontalAlignment="Stretch"
-                Margin="10,40,10.4,0" VerticalAlignment="Top" Click="ConvertToXdxfButton_Click" IsEnabled="False" />
-        <Button x:Name="ConvertToStarDictButton" Grid.Row="0" Content="Convert to StarDict"
-                HorizontalAlignment="Stretch" Margin="10,70,10.4,0" VerticalAlignment="Top"
-                Click="ConvertToStarDictButton_Click" IsEnabled="False" />
-        <TextBox x:Name="Console" HorizontalAlignment="Stretch" Margin="10" Grid.Row="1" TextWrapping="Wrap"
-                 VerticalAlignment="Stretch" HorizontalScrollBarVisibility="Disabled"
-                 VerticalScrollBarVisibility="Visible" />
+
+        <GroupBox x:Name="LoadGroupBox" Grid.Row="0" Grid.Column="0" Header="Load" HorizontalAlignment="Stretch" Margin="10" VerticalAlignment="Stretch">
+            <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0">
+                <Button x:Name="LoadFromSqliteButton" Content="Load dictionary from SQLite" HorizontalAlignment="Stretch" Margin="10" VerticalAlignment="Top" Click="LoadFromSqliteButton_Click" />
+                <Button x:Name="LoadFromJsonDumpButton" Content="Load dictionay from Json dump" HorizontalAlignment="Stretch" Margin="10,40,10,10" VerticalAlignment="Top" Click="LoadFromJsonDumpButton_Click" />
+            </Grid>
+        </GroupBox>
+
+        <GroupBox x:Name="ExportGroupBox" Grid.Row="1" Grid.Column="0" Header="Export" HorizontalAlignment="Stretch" Margin="10" VerticalAlignment="Stretch">
+            <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0">
+                <Button x:Name="ExportToXdxfButton" Content="Export to XDXF" HorizontalAlignment="Stretch" Margin="10" VerticalAlignment="Top" Click="ConvertToXdxfButton_Click" IsEnabled="False" />
+                <Button x:Name="ExportToStarDictButton" Content="Export to StarDict" HorizontalAlignment="Stretch" Margin="10, 40, 10, 10" VerticalAlignment="Top" Click="ConvertToStarDictButton_Click" IsEnabled="False" />
+                <Button x:Name="ExportToJsonDumpButton" Content="Export to JsonDump" HorizontalAlignment="Stretch" Margin="10, 70, 10, 10" VerticalAlignment="Top" Click="ConvertToJsonDumpButton_Click" IsEnabled="False" />
+            </Grid>
+        </GroupBox>
+
+        <GroupBox x:Name="ConsoleGroupBox" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Header="Console" HorizontalAlignment="Stretch" Margin="10" VerticalAlignment="Stretch">
+            <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0">
+                <TextBox x:Name="Console" HorizontalAlignment="Stretch" Margin="10" TextWrapping="NoWrap" VerticalAlignment="Stretch" HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible" />
+            </Grid>
+        </GroupBox>
     </Grid>
 </Window>

@@ -35,7 +35,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ExportingProgressInfo.cs" />
-    <Compile Include="ExtractingProgressInfo.cs" />
+    <Compile Include="LoadingProgressInfo.cs" />
+    <Compile Include="IExporter.cs" />
+    <Compile Include="Model\Definition.cs" />
+    <Compile Include="Model\GenericDictionary.cs" />
+    <Compile Include="Model\Meaning.cs" />
+    <Compile Include="Model\WordSuggestion.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
