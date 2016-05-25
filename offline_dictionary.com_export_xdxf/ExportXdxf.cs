@@ -129,7 +129,7 @@ namespace offline_dictionary.com_export_xdxf
                     CreateArticle(xmlWriter, article.Key, article.Value);
                     exportingProgressInfo.WordsWritten++;
 
-                    if (progress != null && exportingProgressInfo.WordsWritten%100 == 0)
+                    if (progress != null && exportingProgressInfo.WordsWritten % 500 == 0)
                         progress.Report(exportingProgressInfo);
                 }
 
