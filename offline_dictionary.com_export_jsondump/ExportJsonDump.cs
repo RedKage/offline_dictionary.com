@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Text;
+using System.Linq;
+using System.Runtime.Serialization.Formatters;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using offline_dictionary.com_shared;
 using offline_dictionary.com_shared.Model;
 
@@ -14,6 +18,15 @@ namespace offline_dictionary.com_export_jsondump
         private readonly string _outputDirPath;
         private readonly GenericDictionary _genericDictionary;
 
+        public static JsonSerializer Serializer => new JsonSerializer
+        {
+            Formatting = Formatting.Indented,
+            TypeNameAssemblyFormat = FormatterAssemblyStyle.Simple,
+            TypeNameHandling = TypeNameHandling.Objects,
+            Converters = { new DeepDictionaryConverter() },
+            ContractResolver = new DictionaryAsArrayResolver()
+        };
+        
         public ExportJsonDump(GenericDictionary genericDictionary, string outputDirPath)
         {
             _genericDictionary = genericDictionary;
@@ -30,12 +43,11 @@ namespace offline_dictionary.com_export_jsondump
                 {
                     using (GZipStream zipStream = new GZipStream(jsonFileStream, CompressionLevel.Optimal, false))
                     {
-                        using (TextWriter jsonStream = new StreamWriter(zipStream, Encoding.UTF32))
+                        using (TextWriter jsonStream = new StreamWriter(zipStream))
                         {
                             using (JsonTextWriter jsonWriter = new JsonTextWriter(jsonStream))
                             {
-                                JsonSerializer serializer = new JsonSerializer();
-                                serializer.Serialize(jsonWriter, _genericDictionary, typeof(GenericDictionary));
+                                Serializer.Serialize(jsonWriter, _genericDictionary, typeof(GenericDictionary));
                             }
                         }
                     }
@@ -43,6 +55,60 @@ namespace offline_dictionary.com_export_jsondump
             });
             convert.Start();
             await convert;
+        }
+
+        public class DictionaryAsArrayResolver : DefaultContractResolver
+        {
+            protected override JsonContract CreateContract(Type objectType)
+            {
+                if (objectType.GetInterfaces()
+                    .Any(i => i == typeof(IDictionary) || (i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IDictionary<,>))))
+                {
+                    return CreateArrayContract(objectType);
+                }
+
+                return base.CreateContract(objectType);
+            }
+        }
+
+        public class DeepDictionaryConverter : JsonConverter
+        {
+            public override bool CanConvert(Type objectType)
+            {
+                return (typeof(IDictionary).IsAssignableFrom(objectType) ||
+                        TypeImplementsGenericInterface(objectType, typeof(IDictionary<,>)));
+            }
+
+            private static bool TypeImplementsGenericInterface(Type concreteType, Type interfaceType)
+            {
+                return concreteType.GetInterfaces()
+                       .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == interfaceType);
+            }
+
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                Type type = value.GetType();
+                IEnumerable keys = (IEnumerable)type.GetProperty("Keys").GetValue(value, null);
+                IEnumerable values = (IEnumerable)type.GetProperty("Values").GetValue(value, null);
+                IEnumerator valueEnumerator = values.GetEnumerator();
+
+                writer.WriteStartArray();
+                foreach (object key in keys)
+                {
+                    valueEnumerator.MoveNext();
+
+                    writer.WriteStartArray();
+                    serializer.Serialize(writer, key);
+                    serializer.Serialize(writer, valueEnumerator.Current);
+                    writer.WriteEndArray();
+                }
+                writer.WriteEndArray();
+            }
+
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                throw new NotImplementedException();
+            }
         }
     }
 }

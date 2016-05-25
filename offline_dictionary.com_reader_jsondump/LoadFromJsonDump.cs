@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.IO.Compression;
-using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using offline_dictionary.com_shared;
@@ -12,12 +11,12 @@ namespace offline_dictionary.com_reader_jsondump
     public class LoadFromJsonDump
     {
         private readonly string _jsonDumpFilePath;
-        private readonly int _loadWordsLimit;
 
-        public LoadFromJsonDump(string jsonDumpFilePath, int loadWordsLimit = -1)
+        public static JsonSerializer Serializer => com_export_jsondump.ExportJsonDump.Serializer;
+
+        public LoadFromJsonDump(string jsonDumpFilePath)
         {
             _jsonDumpFilePath = jsonDumpFilePath;
-            _loadWordsLimit = loadWordsLimit;
         }
 
         public async Task<GenericDictionary> LoadAsync(IProgress<LoadingProgressInfo> progress)
@@ -28,12 +27,11 @@ namespace offline_dictionary.com_reader_jsondump
                 {
                     using (GZipStream zipStream = new GZipStream(jsonFileStream, CompressionMode.Decompress, false))
                     {
-                        using (TextReader jsonStream = new StreamReader(zipStream, Encoding.UTF32))
+                        using (TextReader jsonStream = new StreamReader(zipStream))
                         {
                             using (JsonTextReader jsonReader = new JsonTextReader(jsonStream))
                             {
-                                JsonSerializer serializer = new JsonSerializer();
-                                return serializer.Deserialize<GenericDictionary>(jsonReader);
+                                return Serializer.Deserialize<GenericDictionary>(jsonReader);
                             }
                         }
                     }

@@ -16,7 +16,10 @@ namespace offline_dictionary.com
             @"F:\android-08-08-primary.sqlite";
 
         private const string JsonDumpFilePath =
-            @"F:\android-08-08-primary.json.gz";
+            @"F:\dictionary.com-5.5.2_08-08.json.gz";
+
+        private const string JsonDumpOutDirPath =
+            @"F:\";
 
         private const string OutDirPath =
             @"D:\Work\Dev\offline_dictionary.com\out\X-StarDict_3.0.4_rev10\Bin\StarDict\dic\dictionary.com-5.5.2_08-08";
@@ -116,7 +119,7 @@ namespace offline_dictionary.com
             DisableExports();
             DisableLoaders();
 
-            LoadFromJsonDump loadFromJsonDump = new LoadFromJsonDump(JsonDumpFilePath, LoadWordsLimit);
+            LoadFromJsonDump loadFromJsonDump = new LoadFromJsonDump(JsonDumpFilePath);
 
             Progress<LoadingProgressInfo> extractProgress = new Progress<LoadingProgressInfo>();
             extractProgress.ProgressChanged += LoadingProgression;
@@ -172,7 +175,7 @@ namespace offline_dictionary.com
 
         private async void ConvertToJsonDumpButton_Click(object sender, RoutedEventArgs e)
         {
-            ConsoleOut($"Exporting to JSON dump to '{OutDirPath}' ...");
+            ConsoleOut($"Exporting to JSON dump to '{JsonDumpOutDirPath}' ...");
 
             DisableExports();
             DisableLoaders();

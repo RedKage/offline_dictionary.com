@@ -48,6 +48,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\offline_dictionary.com_export_jsondump\offline_dictionary.com_export_jsondump.csproj">
+      <Project>{6066e949-7bd5-4f0b-8579-607c53a7a9d7}</Project>
+      <Name>offline_dictionary.com_export_jsondump</Name>
+    </ProjectReference>
     <ProjectReference Include="..\offline_dictionary.com_shared\offline_dictionary.com_shared.csproj">
       <Project>{FEB051FA-8FE9-4747-AA92-39D1C958F4B5}</Project>
       <Name>offline_dictionary.com_shared</Name>

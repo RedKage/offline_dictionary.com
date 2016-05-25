@@ -290,18 +290,8 @@ namespace offline_dictionary.com_reader_sqlite
                 text = text.Replace("<", "&lt;");
                 text = text.Replace(">", "&gt;");
 
-                // Convert line breaks to Unix style
-                text = text.Replace("\r\n", "\n");
-                text = text.Replace("\r", "\n");
-
                 // Encapsulate text nodes so we are sure there are no text left between closed tags...
                 text = $"<span>{text}</span>";
-
-                // Convert tabs to 4 spaces
-                text = text.Replace("\t", "    ");
-                
-                // Add <br/> for each line break
-                text = text.Replace("\n", "<br/>\n");
 
                 // Re-inject
                 HtmlNode newChild = HtmlNode.CreateNode(text);
@@ -310,9 +300,16 @@ namespace offline_dictionary.com_reader_sqlite
 
             string innerHtml = agileHtmlDocument.DocumentNode.InnerHtml;
 
-            // Weird but it seems agileHtmlDocument fucks my <br/> and transforms them into crappy <br>
-            innerHtml = innerHtml.Replace("<br>", "<br/>");
+            // Convert line breaks to Unix style
+            innerHtml = innerHtml.Replace("\r\n", "\n");
+            innerHtml = innerHtml.Replace("\r", "\n");
+            
+            // Convert tabs to 4 spaces
+            innerHtml = innerHtml.Replace("\t", "    ");
 
+            // Add <br/> for each line break
+            innerHtml = innerHtml.Replace("\n", "<br/>\n");
+            
             return innerHtml;
         }
 

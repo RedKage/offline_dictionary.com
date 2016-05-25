@@ -17,15 +17,27 @@ namespace offline_dictionary.com_export_stardict
 
         private readonly string _outputDirPath;
         private readonly GenericDictionary _genericDictionary;
-        private readonly List<string> _sortedWords;
-        private static readonly byte[] NUL = {0};
+        private readonly List<Meaning> _sortedWords;
+
+        // ReSharper disable InconsistentNaming
+        private static readonly byte[] NUL = { 0 };
+        // ReSharper restore InconsistentNaming
+
         private static readonly string DictZipBinaryPath = $@"{AppDomain.CurrentDomain.BaseDirectory}\dictzip.exe";
+
+        private readonly ExportingProgressInfo _exportingProgressInfo;
 
         public ExportStarDict(GenericDictionary genericDictionary, string outputDirPath)
         {
             _genericDictionary = genericDictionary;
             _outputDirPath = outputDirPath;
-            _sortedWords = new List<string>(_genericDictionary.AllWords.Count);
+            _sortedWords = new List<Meaning>(_genericDictionary.AllWords.Count);
+
+            _exportingProgressInfo = new ExportingProgressInfo
+            {
+                WordsCountToWrite = genericDictionary.AllWords.Count,
+                WordsWritten = 0
+            };
         }
 
         public async Task ExportAsync(IProgress<ExportingProgressInfo> progress)
@@ -60,15 +72,15 @@ namespace offline_dictionary.com_export_stardict
                             using (BinaryWriter idxWriter = new BinaryWriter(idxSteam, Encoding.UTF8))
                             {
                                 // Get all words and put them into a list
-                                _sortedWords.AddRange(_genericDictionary.AllWords.Keys.Select(k => k.Word));
+                                _sortedWords.AddRange(_genericDictionary.AllWords.Keys);
 
                                 // Now sort the list
                                 _sortedWords.Sort(g_ascii_strcasecmp);
 
                                 // Browse alphabetically
-                                foreach (string word in _sortedWords)
+                                foreach (Meaning meaning in _sortedWords)
                                 {
-                                    WriteWord(progress, word, idxWriter, dictWriter);
+                                    WriteWord(progress, meaning, idxWriter, dictWriter);
                                 }
 
                                 idxFileSizeBytes = idxSteam.Length;
@@ -149,90 +161,76 @@ namespace offline_dictionary.com_export_stardict
             }
         }
 
-        private void WriteWord(IProgress<ExportingProgressInfo> progress, string word, BinaryWriter idxWriter, BinaryWriter dictWriter)
+        private void WriteWord(IProgress<ExportingProgressInfo> progress, Meaning meaning, BinaryWriter idxWriter, BinaryWriter dictWriter)
         {
-            ExportingProgressInfo exportingProgressInfo = new ExportingProgressInfo
-            {
-                WordsCountToWrite = _genericDictionary.AllWords.Count,
-                WordsWritten = 0
-            };
-
             // word_str
-            if (word.Length >= 256)
-                throw new NotSupportedException(); // todo handle this
+            if (meaning.Word.Length >= 256)
+                throw new NotSupportedException(); // todo gotta handle this
 
-            idxWriter.Write(Encoding.UTF8.GetBytes(word));
+            idxWriter.Write(Encoding.UTF8.GetBytes(meaning.Word));
             idxWriter.Write(NUL);
 
             // word_data_offset
             uint definitionPostionBegin = Convert.ToUInt32(dictWriter.BaseStream.Position);
             idxWriter.Write(ToBigEndian(definitionPostionBegin));
 
-            // Get meanings linked to the same words (homonyms)
-            var articlesForWord = _genericDictionary.AllWords.Where(w => w.Key.Word == word).OrderBy(w => w.Key.Id);
+            // Re-order definitions
+            List<Definition> orderedDefinitions =
+                _genericDictionary.AllWords[meaning]
+                    .OrderBy(d => d.MeaningId)
+                    .ThenBy(d => d.Position)
+                    .Distinct()
+                    .ToList();
 
-            // Put each meaning in the whole definition, numbering them
-            int meaningIndex = 0;
-            foreach (KeyValuePair<Meaning, List<Definition>> article in articlesForWord)
+            // Add a meaning in the definition + a numbered bullet point
+            WriteWordMeaningHtmlHeader(dictWriter, meaning);
+
+            // Write definitions for this meaning one after the other
+            foreach (Definition definition in orderedDefinitions)
             {
-                meaningIndex++;
-                Meaning meaning = article.Key;
-
-                // Add a meaning in the definition + a numbered bullet point
-                WriteWordMeaningHtmlHeader(dictWriter, meaningIndex, meaning);
-
-                // Re-order definitions
-                List<Definition> orderedDefinitions =
-                    article.Value
-                        .OrderBy(d => d.MeaningId)
-                        .ThenBy(d => d.Position)
-                        .Distinct()
-                        .ToList();
-
-                // Write definitions for this meaning one after the other
-                foreach (Definition definition in orderedDefinitions)
-                {
-                    dictWriter.Write(Encoding.UTF8.GetBytes(definition.DefinitionHtml));
-                }
-
-                // word_data_size;
-                uint definitionPostionEnd = Convert.ToUInt32(dictWriter.BaseStream.Position);
-                idxWriter.Write(ToBigEndian(definitionPostionEnd - definitionPostionBegin));
-
-                // Alternate keywords todo SYN
-                //foreach (string word in meaning.AlternateWords)
-                //{
-                //}
-
-                exportingProgressInfo.WordsWritten++;
-
-                if (progress != null && exportingProgressInfo.WordsWritten % 100 == 0)
-                    progress.Report(exportingProgressInfo);
+                string tweakedHtml = TweakHtml(definition.DefinitionHtml);
+                dictWriter.Write(Encoding.UTF8.GetBytes(tweakedHtml));
             }
+
+            // word_data_size;
+            uint definitionPostionEnd = Convert.ToUInt32(dictWriter.BaseStream.Position);
+            idxWriter.Write(ToBigEndian(definitionPostionEnd - definitionPostionBegin));
+
+            _exportingProgressInfo.WordsWritten++;
+            if (progress != null && _exportingProgressInfo.WordsWritten % 100 == 0)
+                progress.Report(_exportingProgressInfo);
         }
 
-        private static void WriteWordMeaningHtmlHeader(BinaryWriter dictWriter, int meaningIndex, Meaning meaning)
+        private static void WriteWordMeaningHtmlHeader(BinaryWriter dictWriter, Meaning meaning)
         {
             StringBuilder htmlHeader =
-                new StringBuilder($"{(meaningIndex > 1 ? "<br>" : string.Empty)}<b>{meaningIndex}. {meaning.Word}</b><br/>\n");
+                new StringBuilder($"<b>{meaning.Word}</b><br>\n");
 
             if (!string.IsNullOrWhiteSpace(meaning.PronounciationIpa))
             {
-                htmlHeader.AppendFormat("    <span>IPA: /{0}/</span><br/>\n", meaning.PronounciationIpa);
+                htmlHeader.AppendFormat("    <span>IPA: /{0}/</span><br>\n", meaning.PronounciationIpa);
             }
 
             if (!string.IsNullOrWhiteSpace(meaning.PronounciationSpell))
             {
-                htmlHeader.AppendFormat("    <span>Spell: [{0}]</span><br/>\n", meaning.PronounciationSpell);
+                htmlHeader.AppendFormat("    <span>Spell: [{0}]</span><br>\n", meaning.PronounciationSpell);
             }
 
             if (!string.IsNullOrWhiteSpace(meaning.Syllable))
             {
-                htmlHeader.AppendFormat("    <span>Syllable: {0}</span><br/>\n", meaning.Syllable);
+                htmlHeader.AppendFormat("    <span>Syllable: {0}</span><br>\n", meaning.Syllable);
             }
 
             dictWriter.Write(Encoding.UTF8.GetBytes(htmlHeader.ToString()));
         }
+
+        private string TweakHtml(string html)
+        {
+            html = html.Replace("<br/>", "<br>");
+            return html;
+        }
+
+        #region g_ascii_strcasecmp
 
         private byte[] ToBigEndian(uint stuff)
         {
@@ -256,8 +254,13 @@ namespace offline_dictionary.com_export_stardict
         private static char ToLower(char c)
         {
             return IsUpper(c)
-                ? (char) (c - 'A' + 'a')
+                ? (char)(c - 'A' + 'a')
                 : c;
+        }
+
+        private static int g_ascii_strcasecmp(Meaning m1, Meaning m2)
+        {
+            return g_ascii_strcasecmp(m1.Word, m2.Word);
         }
 
         /// <summary>
@@ -293,5 +296,7 @@ namespace offline_dictionary.com_export_stardict
 
             return 0;
         }
+
+        #endregion
     }
 }
