@@ -1,4 +1,4 @@
-﻿namespace offline_dictionary.com_reader
+﻿namespace offline_dictionary.com_shared
 {
     public class ExtractingProgressInfo
     {
@@ -12,7 +12,7 @@
             int completionPercent =
                 WordsCountToAdd == 0
                     ? 0
-                    : WordsAdded * 100 / WordsCountToAdd;
+                    : WordsAdded*100/WordsCountToAdd;
 
             return $"Add...\t{completionPercent}%\t\t({WordsAdded})";
         }

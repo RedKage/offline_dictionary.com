@@ -4,6 +4,6 @@
              xmlns:local="clr-namespace:offline_dictionary.com"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+
     </Application.Resources>
 </Application>

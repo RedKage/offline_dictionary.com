@@ -3,6 +3,7 @@ using offline_dictionary.com_export_stardict;
 using offline_dictionary.com_export_xdxf;
 using offline_dictionary.com_reader;
 using offline_dictionary.com_reader.Model;
+using offline_dictionary.com_shared;
 
 namespace offline_dictionary.com
 {
@@ -10,7 +11,9 @@ namespace offline_dictionary.com
     {
         //private static string DbFilePath = @"Dictionaries\dictionary.com_5.2.2\android-08-08-primary.sqlite";
         private const string DbFilePath = @"F:\android-08-08-primary.sqlite";
-        private const string OutDirPath = @"D:\Work\Dev\offline_dictionary.com\out\X-StarDict_3.0.4_rev10\Bin\StarDict\dic\dictionary.com-5.5.2_08-08";
+
+        private const string OutDirPath =
+            @"D:\Work\Dev\offline_dictionary.com\out\X-StarDict_3.0.4_rev10\Bin\StarDict\dic\dictionary.com-5.5.2_08-08";
 
         public GenericDictionary Dictionary { get; set; }
 

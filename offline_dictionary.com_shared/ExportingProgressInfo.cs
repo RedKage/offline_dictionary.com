@@ -1,4 +1,4 @@
-﻿namespace offline_dictionary.com_export_xdxf
+﻿namespace offline_dictionary.com_shared
 {
     public class ExportingProgressInfo
     {
@@ -12,7 +12,7 @@
             int completionPercent =
                 WordsCountToWrite == 0
                     ? 0
-                    : WordsWritten * 100 / WordsCountToWrite;
+                    : WordsWritten*100/WordsCountToWrite;
 
             return $"Write...\t{completionPercent}%\t\t({WordsWritten})";
         }

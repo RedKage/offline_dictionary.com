@@ -6,8 +6,8 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using offline_dictionary.com_export_xdxf;
 using offline_dictionary.com_reader.Model;
+using offline_dictionary.com_shared;
 
 namespace offline_dictionary.com_export_stardict
 {
@@ -18,7 +18,7 @@ namespace offline_dictionary.com_export_stardict
         private readonly string _outputDirPath;
         private readonly GenericDictionary _genericDictionary;
         private readonly List<string> _sortedWords;
-        private static readonly byte[] NUL = { 0 };
+        private static readonly byte[] NUL = {0};
         private static readonly string DictZipBinaryPath = $@"{AppDomain.CurrentDomain.BaseDirectory}\dictzip.exe";
 
         public ExportStarDict(GenericDictionary genericDictionary, string outputDirPath)
@@ -36,7 +36,7 @@ namespace offline_dictionary.com_export_stardict
             string outIdxFilePath = $@"{basePath}.idx";
             string outIdxGzFilePath = $@"{outIdxFilePath}.gz";
             string outIfoFilePath = $@"{basePath}.ifo";
-            
+
             long idxFileSizeBytes = await CreateDict(progress, outDictFilePath, outIdxFilePath);
 
             CompressIdx(outIdxFilePath, outIdxGzFilePath);
@@ -44,7 +44,8 @@ namespace offline_dictionary.com_export_stardict
             CreateIfo(outIfoFilePath, idxFileSizeBytes);
         }
 
-        private async Task<long> CreateDict(IProgress<ExportingProgressInfo> progress, string targetDictFilePath, string targetIdxFilePath)
+        private async Task<long> CreateDict(IProgress<ExportingProgressInfo> progress, string targetDictFilePath,
+            string targetIdxFilePath)
         {
             long idxFileSizeBytes = 0;
 
@@ -121,7 +122,7 @@ namespace offline_dictionary.com_export_stardict
 
             using (Process exeProcess = Process.Start(startInfo))
             {
-                if(exeProcess == null)
+                if (exeProcess == null)
                     throw new NullReferenceException($"{startInfo.FileName} {startInfo.Arguments}");
 
                 exeProcess.WaitForExit();
@@ -148,7 +149,8 @@ namespace offline_dictionary.com_export_stardict
             }
         }
 
-        private void WriteWord(IProgress<ExportingProgressInfo> progress, string word, BinaryWriter idxWriter, BinaryWriter dictWriter)
+        private void WriteWord(IProgress<ExportingProgressInfo> progress, string word, BinaryWriter idxWriter,
+            BinaryWriter dictWriter)
         {
             ExportingProgressInfo exportingProgressInfo = new ExportingProgressInfo
             {
@@ -205,7 +207,7 @@ namespace offline_dictionary.com_export_stardict
 
                 exportingProgressInfo.WordsWritten++;
 
-                if (progress != null && exportingProgressInfo.WordsWritten % 100 == 0)
+                if (progress != null && exportingProgressInfo.WordsWritten%100 == 0)
                     progress.Report(exportingProgressInfo);
             }
         }
@@ -213,11 +215,13 @@ namespace offline_dictionary.com_export_stardict
         private static void WriteWordMeaningHtmlHeader(BinaryWriter dictWriter, int meaningIndex, Meaning meaning)
         {
             string htmlHeader =
-$@"{(meaningIndex>1 ? "<br>" : string.Empty)}
+                $@"{(meaningIndex > 1 ? "<br>" : string.Empty)}
 <b>{meaningIndex}. {meaning.Word}</b><br>
-    <span>IPA: /{meaning.PronounciationIpa}/</span><br>
+    <span>IPA: /{meaning
+                    .PronounciationIpa}/</span><br>
     <span>Spell: [{meaning.PronounciationSpell}]</span><br>
-    <span>Syllable: {meaning.Syllable}</span><br>";
+    <span>Syllable: {meaning
+                        .Syllable}</span><br>";
 
             dictWriter.Write(Encoding.UTF8.GetBytes(htmlHeader));
         }
@@ -244,7 +248,7 @@ $@"{(meaningIndex>1 ? "<br>" : string.Empty)}
         private static char ToLower(char c)
         {
             return IsUpper(c)
-                ? (char)(c - 'A' + 'a')
+                ? (char) (c - 'A' + 'a')
                 : c;
         }
 
@@ -274,10 +278,10 @@ $@"{(meaningIndex>1 ? "<br>" : string.Empty)}
             }
 
             if (indexS1 >= s1.Length && indexS2 < s2.Length)
-                return -s2[indexS2];        // 0 - s2[indexS2]
+                return -s2[indexS2]; // 0 - s2[indexS2]
 
             if (indexS2 >= s2.Length && indexS1 < s1.Length)
-                return s1[indexS2];         // s1[indexS1] - 0
+                return s1[indexS2]; // s1[indexS1] - 0
 
             return 0;
         }

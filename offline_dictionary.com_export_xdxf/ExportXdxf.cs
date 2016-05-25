@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Schema;
 using offline_dictionary.com_reader.Model;
+using offline_dictionary.com_shared;
 
 namespace offline_dictionary.com_export_xdxf
 {
@@ -69,7 +70,8 @@ namespace offline_dictionary.com_export_xdxf
             }
         }
 
-        private static async Task CreateXdxfToStreamAsync(IProgress<ExportingProgressInfo> progress, GenericDictionary genericDictionary, XmlWriter xmlWriter)
+        private static async Task CreateXdxfToStreamAsync(IProgress<ExportingProgressInfo> progress,
+            GenericDictionary genericDictionary, XmlWriter xmlWriter)
         {
             xmlWriter.WriteStartDocument();
 
@@ -130,7 +132,7 @@ namespace offline_dictionary.com_export_xdxf
                     CreateArticle(xmlWriter, article.Key, article.Value);
                     exportingProgressInfo.WordsWritten++;
 
-                    if (progress != null && exportingProgressInfo.WordsWritten % 100 == 0)
+                    if (progress != null && exportingProgressInfo.WordsWritten%100 == 0)
                         progress.Report(exportingProgressInfo);
                 }
 

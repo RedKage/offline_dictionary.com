@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Web;
 using HtmlAgilityPack;
 using offline_dictionary.com_reader.Model;
+using offline_dictionary.com_shared;
 
 namespace offline_dictionary.com_reader
 {
@@ -24,7 +25,10 @@ namespace offline_dictionary.com_reader
         private const string DictionayName = "dictionary.com";
         private const string DictionayWebsite = "http://www.dictionary.com";
         private const string DictionayFullName = "Dictionary.com Unabridged";
-        private const string DictionayDescription = "Dictionary.com Unabridged. Based on the Random House Dictionary, © Random House, Inc. 2016";
+
+        private const string DictionayDescription =
+            "Dictionary.com Unabridged. Based on the Random House Dictionary, © Random House, Inc. 2016";
+
         private const string DictionayVersion = "5.5.2_08-08"; // app version + sqlite file version
 
         private readonly GenericDictionary _genericDictionary;
@@ -123,7 +127,8 @@ namespace offline_dictionary.com_reader
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($@"[x____x] Unknown error occured for word {currentMeaning}\n{ex.Message}\n{ex.StackTrace}\n\n");
+                Debug.WriteLine(
+                    $@"[x____x] Unknown error occured for word {currentMeaning}\n{ex.Message}\n{ex.StackTrace}\n\n");
             }
         }
 
@@ -266,7 +271,9 @@ namespace offline_dictionary.com_reader
             agileHtmlDocument.LoadHtml(potentiallyFuckedUpHtml);
 
             // Decode crazy HTML entities to unicode, and then re-encode only XML entities
-            HtmlNodeCollection textNodes = agileHtmlDocument.DocumentNode.SelectNodes("//text()[(normalize-space(.) != '') and not(parent::script) and not(*)]");
+            HtmlNodeCollection textNodes =
+                agileHtmlDocument.DocumentNode.SelectNodes(
+                    "//text()[(normalize-space(.) != '') and not(parent::script) and not(*)]");
             foreach (HtmlNode htmlNode in textNodes)
             {
                 string text = htmlNode.InnerText;

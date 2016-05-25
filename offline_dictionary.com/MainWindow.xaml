@@ -8,12 +8,18 @@
         Title="MainWindow" Height="340" Width="325">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="50*"/>
-            <RowDefinition Height="100*"/>
+            <RowDefinition Height="50*" />
+            <RowDefinition Height="100*" />
         </Grid.RowDefinitions>
-        <Button x:Name="ExtractFromDbButton" Grid.Row="0" Content="Extract from SQLite" HorizontalAlignment="Stretch" Margin="10,10,10.4,0" VerticalAlignment="Top" Click="ExtractFromDbButton_Click" />
-        <Button x:Name="ConvertToXdxfButton" Grid.Row="0" Content="Convert to XDXF" HorizontalAlignment="Stretch" Margin="10,40,10.4,0" VerticalAlignment="Top" Click="ConvertToXdxfButton_Click" IsEnabled="False" />
-        <Button x:Name="ConvertToStarDictButton" Grid.Row="0" Content="Convert to StarDict" HorizontalAlignment="Stretch" Margin="10,70,10.4,0" VerticalAlignment="Top" Click="ConvertToStarDictButton_Click" IsEnabled="False" />
-        <TextBox x:Name="Console" HorizontalAlignment="Stretch" Margin="10" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Stretch" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Visible"/>
+        <Button x:Name="ExtractFromDbButton" Grid.Row="0" Content="Extract from SQLite" HorizontalAlignment="Stretch"
+                Margin="10,10,10.4,0" VerticalAlignment="Top" Click="ExtractFromDbButton_Click" />
+        <Button x:Name="ConvertToXdxfButton" Grid.Row="0" Content="Convert to XDXF" HorizontalAlignment="Stretch"
+                Margin="10,40,10.4,0" VerticalAlignment="Top" Click="ConvertToXdxfButton_Click" IsEnabled="False" />
+        <Button x:Name="ConvertToStarDictButton" Grid.Row="0" Content="Convert to StarDict"
+                HorizontalAlignment="Stretch" Margin="10,70,10.4,0" VerticalAlignment="Top"
+                Click="ConvertToStarDictButton_Click" IsEnabled="False" />
+        <TextBox x:Name="Console" HorizontalAlignment="Stretch" Margin="10" Grid.Row="1" TextWrapping="Wrap"
+                 VerticalAlignment="Stretch" HorizontalScrollBarVisibility="Disabled"
+                 VerticalScrollBarVisibility="Visible" />
     </Grid>
 </Window>

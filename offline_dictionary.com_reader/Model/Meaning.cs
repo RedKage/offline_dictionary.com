@@ -4,7 +4,7 @@
     {
         public int Id { get; set; }
         public string Word { get; set; }
-        public string [] AlternateWords { get; set; }
+        public string[] AlternateWords { get; set; }
         public string Syllable { get; set; }
         public string PronounciationSpell { get; set; }
         public string PronounciationIpa { get; set; }
