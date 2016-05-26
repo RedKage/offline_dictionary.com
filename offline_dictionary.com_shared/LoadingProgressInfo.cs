@@ -14,7 +14,7 @@
                     ? 0
                     : WordsAdded*100/WordsCountToAdd;
 
-            return $"Add...\t{completionPercent}%\t\t({WordsAdded})";
+            return $"Loading...\t{completionPercent:000}%\t({WordsAdded})";
         }
     }
 }

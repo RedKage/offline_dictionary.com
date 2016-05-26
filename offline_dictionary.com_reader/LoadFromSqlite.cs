@@ -111,10 +111,7 @@ namespace offline_dictionary.com_reader_sqlite
                 // When we add words, we also get their 'alternateWords' at the same time.
                 // Those could be alternative spellings, other words with the same meaning, etc.
                 // --> Pretty much, every word that will lead to this definition
-                string[] alternateWords = GetAlternateWords(currentMeaning).ToArray();
-
-                // Add these words to the meaning
-                currentMeaning.AlternateWords = alternateWords;
+                currentMeaning.AlternateWords = GetAlternateWords(currentMeaning).ToArray();
 
                 // Get definition for meaning
                 List<Definition> definitions = GetDefinition(currentMeaning).ToList();
@@ -125,12 +122,15 @@ namespace offline_dictionary.com_reader_sqlite
                 }
 
                 // Associate meaning --> definition into big ass dictionary
-                _genericDictionary.AllWords.Add(currentMeaning, definitions);
+                bool added = _genericDictionary.AllWords.TryAdd(currentMeaning, definitions);
+                if (!added)
+                {
+                    Debug.WriteLine($@"[x____x] Could not add word {currentMeaning}\n");
+                }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(
-                    $@"[x____x] Unknown error occured for word {currentMeaning}\n{ex.Message}\n{ex.StackTrace}\n\n");
+                Debug.WriteLine($@"[x____x] Unknown error occured for word {currentMeaning}\n{ex.Message}\n{ex.StackTrace}\n\n");
             }
         }
 

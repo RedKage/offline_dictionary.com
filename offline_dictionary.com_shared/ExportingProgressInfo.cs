@@ -14,7 +14,7 @@
                     ? 0
                     : WordsWritten*100/WordsCountToWrite;
 
-            return $"Write...\t{completionPercent}%\t\t({WordsWritten})";
+            return $"Exporting...\t{completionPercent:000}%\t({WordsWritten})";
         }
     }
 }

@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 namespace offline_dictionary.com_shared.Model
 {
     public class GenericDictionary
     {
-        public Dictionary<Meaning, List<Definition>> AllWords { get; set; }
+        public ConcurrentDictionary<Meaning, List<Definition>> AllWords { get; set; }
         public string Name { get; set; }
         public string FullName { get; set; }
         public string Description { get; set; }
@@ -13,7 +14,7 @@ namespace offline_dictionary.com_shared.Model
 
         public GenericDictionary()
         {
-            AllWords = new Dictionary<Meaning, List<Definition>>();
+            AllWords = new ConcurrentDictionary<Meaning, List<Definition>>();
         }
 
         public override string ToString()

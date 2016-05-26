@@ -17,6 +17,9 @@ namespace offline_dictionary.com_export_stardict
 
         private readonly string _outputDirPath;
         private readonly GenericDictionary _genericDictionary;
+        private Dictionary<string, IdxStructure> _wordByIdxPosition;
+        private Dictionary<string, List<Meaning>> _meaningsForWord;
+        private List<string> _sortedWords;
 
         // ReSharper disable InconsistentNaming
         private static readonly byte[] NUL = { 0 };
@@ -25,6 +28,7 @@ namespace offline_dictionary.com_export_stardict
         private static readonly string DictZipBinaryPath = $@"{AppDomain.CurrentDomain.BaseDirectory}\dictzip.exe";
 
         private readonly ExportingProgressInfo _exportingProgressInfo;
+
 
         public ExportStarDict(GenericDictionary genericDictionary, string outputDirPath)
         {
@@ -43,78 +47,211 @@ namespace offline_dictionary.com_export_stardict
             string basePath = $@"{_outputDirPath}\{_genericDictionary.Name}-{_genericDictionary.Version}";
 
             string outDictFilePath = $@"{basePath}.dict";
-            string outIdxFilePath = $@"{basePath}.idx";
-            string outIdxGzFilePath = $@"{outIdxFilePath}.gz";
+            string outIdxFilePath = $@"{basePath}.idx.gz";
             string outIfoFilePath = $@"{basePath}.ifo";
 
-            long idxFileSizeBytes = await CreateDict(progress, outDictFilePath, outIdxFilePath);
+            CreateIdxInMemory();
 
-            CompressIdx(outIdxFilePath, outIdxGzFilePath);
+            await WriteDict(progress, outDictFilePath);
+            long idxSize = WriteIdx(outIdxFilePath);
+
             CompressDictZip(outDictFilePath);
-            CreateIfo(outIfoFilePath, idxFileSizeBytes);
+            WriteIfo(outIfoFilePath, idxSize);
         }
 
-        private async Task<long> CreateDict(IProgress<ExportingProgressInfo> progress, string targetDictFilePath, string targetIdxFilePath)
+        /// <summary>
+        /// StarDict 2.4.2 doesn't support synonyms file (.syn),
+        /// nor does it support multiple same words pointing to a different definition.
+        /// This is supported in 2.4.8 but not 2.4.2.
+        /// So, here we 'merge' the meanings for a same words together.
+        ///
+        /// eg:
+        /// fan (a supporter), fan (stuff that creates air), Fan (cant remember what it means)
+        /// Instead of having 3 entries in the IDX that points to 3 differents definitions,
+        /// we create 1 entry 'fan' and we put all the meanings together.
+        ///
+        /// As a result we will have something like:
+        /// 1. fan (supporter)
+        ///     ...
+        /// 2. fan (stuff for air)
+        ///     ...
+        /// 3. Fan (another meaning)
+        /// </summary>
+        private void CreateIdxInMemory()
         {
-            long idxFileSizeBytes = 0;
+            _wordByIdxPosition = new Dictionary<string, IdxStructure>(StringComparer.InvariantCultureIgnoreCase);
 
+            // Put all the meanings together
+            List<Meaning> allMeanings = new List<Meaning>(_genericDictionary.AllWords.Count);
+            allMeanings.AddRange(_genericDictionary.AllWords.Keys);
+
+            // Group meanings for the same words (homonyms become 1 word with multiple meanings)
+            _meaningsForWord =
+                allMeanings
+                    .GroupBy(m => m.Word, StringComparer.InvariantCultureIgnoreCase)
+                    .ToDictionary(g => g.Key, g => g.OrderBy(m => m.Id).ToList(), StringComparer.InvariantCultureIgnoreCase);
+
+            // Add all of the alternate words so they point to the definitions of their 'main word'
+            foreach (var meaningByWord in _meaningsForWord)
+            {
+                string mainWord = meaningByWord.Key;
+                List<Meaning> meanings = meaningByWord.Value;
+
+                IdxStructure mainWordStructure = new IdxStructure
+                {
+                    ParentWord = null
+                };
+
+                // Word is also a synonym for another word
+                // and has already been added
+                if (_wordByIdxPosition.ContainsKey(mainWord))
+                {
+                    // Make sure this word stays a main word as it has its own definition
+                    _wordByIdxPosition[mainWord] = mainWordStructure;
+                }
+                else
+                {
+                    // Add main word to .idx
+                    _wordByIdxPosition.Add(mainWord, mainWordStructure);
+                }
+                
+                // Reference the 'main word' for each synonym
+                foreach (string synonym in meanings.SelectMany(m => m.AlternateWords))
+                {
+                    if (_wordByIdxPosition.ContainsKey(synonym))
+                        continue;
+
+                    // Add aletrnate word to .idx specifying the parent word
+                    IdxStructure alternateWordStructure = new IdxStructure
+                    {
+                        ParentWord = mainWordStructure
+                    };
+                    _wordByIdxPosition.Add(synonym, alternateWordStructure);
+                }
+            }
+
+            // Sort the words
+            _sortedWords = new List<string>(_wordByIdxPosition.Keys);
+            _sortedWords.Sort(g_ascii_strcasecmp);
+        }
+
+        private async Task WriteDict(IProgress<ExportingProgressInfo> progress, string targetDictFilePath)
+        {
             Task export = new Task(() =>
             {
                 using (FileStream dictStream = new FileStream(targetDictFilePath, FileMode.Create))
                 {
                     using (BinaryWriter dictWriter = new BinaryWriter(dictStream, Encoding.UTF8))
                     {
-                        using (FileStream idxSteam = new FileStream(targetIdxFilePath, FileMode.Create))
+                        // Get a word and its meanings
+                        foreach (var meaningForWord in _meaningsForWord)
                         {
-                            using (BinaryWriter idxWriter = new BinaryWriter(idxSteam, Encoding.UTF8))
+                            string word = meaningForWord.Key;
+                            List<Meaning> meanings = meaningForWord.Value;
+
+                            // Get this word entry in the .idx structure
+                            if (!_wordByIdxPosition.ContainsKey(word))
+                                throw new KeyNotFoundException(word);
+
+                            IdxStructure idxStructure = _wordByIdxPosition[word];
+
+                            // Update position in .idx
+                            uint definitionPostionBegin = Convert.ToUInt32(dictWriter.BaseStream.Position);
+                            idxStructure.DefinitionPosition = definitionPostionBegin;
+
+                            // Write the word's meanings one after another
+                            for (int index = 0; index < meanings.Count; index++)
                             {
-                                List<Meaning> sortedMeanings = new List<Meaning>(_genericDictionary.AllWords.Count);
+                                Meaning meaning = meanings[index];
 
-                                // Get all words and put them into a list
-                                sortedMeanings.AddRange(_genericDictionary.AllWords.Keys);
+                                // Visually separate meanings
+                                WriteWordMeaningHtmlHeader(dictWriter, meaning, index + 1, meanings.Count);
 
-                                // Now sort the list
-                                sortedMeanings.Sort(g_ascii_strcasecmp);
+                                // A meaning can have multiple definitions, re-order them
+                                List<Definition> orderedDefinitions =
+                                    _genericDictionary.AllWords[meaning]
+                                        .OrderBy(d => d.MeaningId)
+                                        .ThenBy(d => d.Position)
+                                        .Distinct()
+                                        .ToList();
 
-                                // Group same words together (homonyms)
-                                Dictionary<string, List<Meaning>> meaningsByWord =
-                                    sortedMeanings
-                                        .GroupBy(m => m.Word, StringComparer.InvariantCultureIgnoreCase)
-                                        .ToDictionary(g => g.Key, g => g.OrderBy(m => m.Id).ToList());
-                                
-                                // Browse alphabetically
-                                foreach (KeyValuePair<string, List<Meaning>> wordWithItsMeanings in meaningsByWord)
+                                // Write definitions for this meaning one after the other
+                                foreach (Definition definition in orderedDefinitions)
                                 {
-                                    WriteWord(progress, wordWithItsMeanings, idxWriter, dictWriter);
+                                    string tweakedHtml = TweakHtml(definition.DefinitionHtml);
+                                    dictWriter.Write(Encoding.UTF8.GetBytes(tweakedHtml));
                                 }
 
-                                idxFileSizeBytes = idxSteam.Length;
+                                // Notify progression
+                                _exportingProgressInfo.WordsWritten++;
+                                if (progress != null && _exportingProgressInfo.WordsWritten%500 == 0)
+                                    progress.Report(_exportingProgressInfo);
+                            }
+
+                            // Update length in .idx
+                            uint definitionPostionEnd = Convert.ToUInt32(dictWriter.BaseStream.Position);
+                            idxStructure.DefinitionLength = definitionPostionEnd - definitionPostionBegin;
+
+                            // Check if this word has alternate words, and use the same position/lenght for them
+                            IEnumerable<string> alternateWords = meanings.SelectMany(m => m.AlternateWords).Distinct();
+                            foreach (string alternateWord in alternateWords)
+                            {
+                                IdxStructure alternateWordIdxStructure = _wordByIdxPosition[alternateWord];
+
+                                if (alternateWordIdxStructure.ParentWord != null)
+                                {
+                                    alternateWordIdxStructure.DefinitionPosition = alternateWordIdxStructure.ParentWord.DefinitionPosition;
+                                    alternateWordIdxStructure.DefinitionLength = alternateWordIdxStructure.ParentWord.DefinitionLength;
+                                }
                             }
                         }
                     }
                 }
+
             });
             export.Start();
             await export;
-
-            return idxFileSizeBytes;
         }
 
-        private void CompressIdx(string targetIdxFilePath, string outIdxGzFilePath, bool removeDict = true)
+        private long WriteIdx(string targetIdxFilePath)
         {
-            using (FileStream inDictStream = new FileStream(targetIdxFilePath, FileMode.Open))
+            long idxUncompressedLength = 0;
+
+            using (FileStream idxSteam = new FileStream(targetIdxFilePath, FileMode.Create))
             {
-                using (FileStream outDictStream = new FileStream(outIdxGzFilePath, FileMode.Create))
+                using (GZipStream idxZipStream = new GZipStream(idxSteam, CompressionLevel.Optimal, false))
                 {
-                    using (GZipStream dictZipStream = new GZipStream(outDictStream, CompressionLevel.Optimal, false))
+                    using (BinaryWriter idxWriter = new BinaryWriter(idxZipStream, Encoding.UTF8))
                     {
-                        inDictStream.CopyTo(dictZipStream);
+                        foreach (string word in _sortedWords)
+                        {
+                            // word_str
+                            if (word.Length >= 256)
+                                throw new NotSupportedException($"Cannot have a word > 256 chars: '{word}'");
+
+                            // check empty definition
+                            if (_wordByIdxPosition[word].DefinitionLength == 0)
+                                throw new ArgumentNullException($"Defintion empty for '{word}'");
+
+                            // word_str + \0
+                            byte[] wordBytes = Encoding.UTF8.GetBytes(word).Concat(NUL).ToArray();
+                            idxWriter.Write(wordBytes);
+
+                            // word_data_offset
+                            byte[] dictDefinitionOffset = ToBigEndian(_wordByIdxPosition[word].DefinitionPosition);
+                            idxWriter.Write(dictDefinitionOffset);
+
+                            // word_data_size;
+                            byte[] dictDefinitionLength = ToBigEndian(_wordByIdxPosition[word].DefinitionLength);
+                            idxWriter.Write(dictDefinitionLength);
+
+                            idxUncompressedLength += wordBytes.Length + dictDefinitionOffset.Length + dictDefinitionLength.Length;
+                        }
                     }
                 }
             }
 
-            if (removeDict)
-                File.Delete(targetIdxFilePath);
+            return idxUncompressedLength;
         }
 
         private static void CompressDictZip(string targetDict, bool removeDict = true)
@@ -146,7 +283,7 @@ namespace offline_dictionary.com_export_stardict
             }
         }
 
-        private void CreateIfo(string targetIfoFilePath, long idxFileSizeBytes)
+        private void WriteIfo(string targetIfoFilePath, long idxSize)
         {
             using (TextWriter textWriter = new StreamWriter(targetIfoFilePath, false, new UTF8Encoding(false)))
             {
@@ -156,8 +293,8 @@ namespace offline_dictionary.com_export_stardict
 
                 textWriter.WriteLine("StarDict's dict ifo file");
                 textWriter.WriteLine($"version={StarDictVersion}");
-                textWriter.WriteLine($"wordcount={_genericDictionary.AllWords.Count}");
-                textWriter.WriteLine($"idxfilesize={idxFileSizeBytes}");
+                textWriter.WriteLine($"wordcount={_wordByIdxPosition.Count}");
+                textWriter.WriteLine($"idxfilesize={idxSize}");
                 textWriter.WriteLine($"bookname={_genericDictionary.Name} ({_genericDictionary.Version})");
                 textWriter.WriteLine($"date={utcNow.Year}.{utcNow.Month:00}.{utcNow.Day:00}");
                 textWriter.WriteLine($"website={_genericDictionary.Website}");
@@ -166,61 +303,17 @@ namespace offline_dictionary.com_export_stardict
             }
         }
 
-        private void WriteWord(IProgress<ExportingProgressInfo> progress, KeyValuePair<string, List<Meaning>> wordWithItsMeanings, BinaryWriter idxWriter, BinaryWriter dictWriter)
+        private static void WriteWordMeaningHtmlHeader(BinaryWriter dictWriter, Meaning meaning, int meaningIndex, int totalMeanings)
         {
-            string word = wordWithItsMeanings.Key;
-            List<Meaning> meanings = wordWithItsMeanings.Value;
+            StringBuilder htmlHeader = new StringBuilder($"{(meaningIndex > 1 ? "<br>" : string.Empty)}");
 
-            // word_str
-            if (word.Length >= 256)
-                throw new NotSupportedException(); // todo gotta handle this
-
-            idxWriter.Write(Encoding.UTF8.GetBytes(word));
-            idxWriter.Write(NUL);
-
-            // word_data_offset
-            uint definitionPostionBegin = Convert.ToUInt32(dictWriter.BaseStream.Position);
-            idxWriter.Write(ToBigEndian(definitionPostionBegin));
-
-            // This word can have multiple meanings
-            for (int index = 0; index < meanings.Count; index++)
-            {
-                Meaning meaning = meanings[index];
-                
-                // Add a meaning in the definition + a numbered bullet point
-                WriteWordMeaningHtmlHeader(dictWriter, meaning, index+1);
-
-                // A meaning can have multiple definitions, re-order them
-                List<Definition> orderedDefinitions =
-                    _genericDictionary.AllWords[meaning]
-                        .OrderBy(d => d.MeaningId)
-                        .ThenBy(d => d.Position)
-                        .Distinct()
-                        .ToList();
-
-                // Write definitions for this meaning one after the other
-                foreach (Definition definition in orderedDefinitions)
-                {
-                    string tweakedHtml = TweakHtml(definition.DefinitionHtml);
-                    dictWriter.Write(Encoding.UTF8.GetBytes(tweakedHtml));
-                }
-
-                _exportingProgressInfo.WordsWritten++;
-                if (progress != null && _exportingProgressInfo.WordsWritten % 500 == 0)
-                    progress.Report(_exportingProgressInfo);
-            }
-
-            // word_data_size;
-            uint definitionPostionEnd = Convert.ToUInt32(dictWriter.BaseStream.Position);
-            idxWriter.Write(ToBigEndian(definitionPostionEnd - definitionPostionBegin));
-        }
-
-        private static void WriteWordMeaningHtmlHeader(BinaryWriter dictWriter, Meaning meaning, int meaningIndex)
-        {
-            StringBuilder htmlHeader =
-                new StringBuilder($"{(meaningIndex > 1 ? "<br>" : string.Empty)}");
-
-            htmlHeader.AppendFormat("<b>{0}. {1}</b><br>\n", meaningIndex, meaning.Word);
+            htmlHeader.AppendFormat(
+                totalMeanings > 1
+                    ? meaningIndex > 1
+                        ? "<hr><b>{0}. {1}</b><br>\n"
+                        : "<b>{0}. {1}</b><br>\n"
+                    : string.Empty,
+                meaningIndex, meaning.Word);
 
             if (!string.IsNullOrWhiteSpace(meaning.PronounciationIpa))
             {
@@ -246,13 +339,25 @@ namespace offline_dictionary.com_export_stardict
             return html;
         }
 
-        #region g_ascii_strcasecmp
-
         private byte[] ToBigEndian(uint stuff)
         {
             byte[] bytes = BitConverter.GetBytes(stuff);
             return bytes.Reverse().ToArray();
         }
+
+        internal class IdxStructure
+        {
+            public IdxStructure ParentWord { get; set; }
+            public uint DefinitionPosition { get; set; }
+            public uint DefinitionLength { get; set; }
+
+            public override string ToString()
+            {
+                return $"{DefinitionPosition}->{DefinitionLength} ({(ParentWord != null ? "AlternateWord" : "MainWord")})";
+            }
+        }
+
+        #region g_ascii_strcasecmp
 
         /// <summary>
         /// Ported to C# from gstrfuncs.c
@@ -272,11 +377,6 @@ namespace offline_dictionary.com_export_stardict
             return IsUpper(c)
                 ? (char)(c - 'A' + 'a')
                 : c;
-        }
-
-        private static int g_ascii_strcasecmp(Meaning m1, Meaning m2)
-        {
-            return g_ascii_strcasecmp(m1.Word, m2.Word);
         }
 
         /// <summary>

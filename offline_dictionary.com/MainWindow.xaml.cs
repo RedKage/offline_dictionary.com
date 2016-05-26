@@ -25,7 +25,7 @@ namespace offline_dictionary.com
             @"D:\Work\Dev\offline_dictionary.com\out\X-StarDict_3.0.4_rev10\Bin\StarDict\dic\dictionary.com-5.5.2_08-08";
 
 #if DEBUG
-        private const int LoadWordsLimit = 200;
+        private const int LoadWordsLimit = -1;
 #endif
 #if !DEBUG
         private const int LoadWordsLimit = -1;
@@ -53,9 +53,14 @@ namespace offline_dictionary.com
 
         private void ConsoleOut(string message)
         {
-            DateTime now = DateTime.UtcNow;
+            DateTime now = DateTime.Now;
+
+            string[] lines = message.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+            foreach (string line in lines)
+            {
+                Console.AppendText($"[{now.Hour:00}:{now.Minute:00}:{now.Second:00}] {line}{Environment.NewLine}");
+            }
             
-            Console.AppendText($"[{now.Hour:00}:{now.Minute:00}:{now.Second:00}] {message}{Environment.NewLine}");
             Console.ScrollToEnd();
         }
 
@@ -91,7 +96,7 @@ namespace offline_dictionary.com
 
         #region Events
 
-        private async void LoadFromSqliteButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        private async void LoadFromSqliteButton_Click(object sender, RoutedEventArgs e)
         {
             ConsoleOut($"Loading SQLite '{SqliteFilePath}' ...");
 
@@ -133,7 +138,7 @@ namespace offline_dictionary.com
             ConsoleOut($"{Dictionary}{Environment.NewLine}");
         }
 
-        private async void ConvertToXdxfButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        private async void ConvertToXdxfButton_Click(object sender, RoutedEventArgs e)
         {
             ConsoleOut($"Exporting to XDXF to '{OutDirPath}' ...");
 
@@ -153,7 +158,7 @@ namespace offline_dictionary.com
             ConsoleOut($"Exported!{Environment.NewLine}");
         }
 
-        private async void ConvertToStarDictButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        private async void ConvertToStarDictButton_Click(object sender, RoutedEventArgs e)
         {
             ConsoleOut($"Exporting to StarDict to '{OutDirPath}' ...");
 
@@ -180,7 +185,7 @@ namespace offline_dictionary.com
             DisableExports();
             DisableLoaders();
 
-            ExportJsonDump exportJsonDump = new ExportJsonDump(Dictionary, OutDirPath);
+            ExportJsonDump exportJsonDump = new ExportJsonDump(Dictionary, JsonDumpOutDirPath);
 
             Progress<ExportingProgressInfo> exportingProgress = new Progress<ExportingProgressInfo>();
             exportingProgress.ProgressChanged += ExportingProgression;
