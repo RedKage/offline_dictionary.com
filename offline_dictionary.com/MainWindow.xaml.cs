@@ -25,7 +25,7 @@ namespace offline_dictionary.com
             @"D:\Work\Dev\offline_dictionary.com\out\X-StarDict_3.0.4_rev10\Bin\StarDict\dic\dictionary.com-5.5.2_08-08";
 
 #if DEBUG
-        private const int LoadWordsLimit = -1;
+        private const int LoadWordsLimit = 10000;
 #endif
 #if !DEBUG
         private const int LoadWordsLimit = -1;

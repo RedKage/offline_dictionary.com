@@ -177,12 +177,12 @@ namespace offline_dictionary.com_export_stardict
                                     string tweakedHtml = TweakHtml(definition.DefinitionHtml);
                                     dictWriter.Write(Encoding.UTF8.GetBytes(tweakedHtml));
                                 }
-
-                                // Notify progression
-                                _exportingProgressInfo.WordsWritten++;
-                                if (progress != null && _exportingProgressInfo.WordsWritten % 500 == 0)
-                                    progress.Report(_exportingProgressInfo);
                             }
+
+                            // Notify progression
+                            _exportingProgressInfo.WordsWritten++;
+                            if (progress != null && _exportingProgressInfo.WordsWritten % 500 == 0)
+                                progress.Report(_exportingProgressInfo);
 
                             // Update length in .idx
                             uint definitionPostionEnd = Convert.ToUInt32(dictWriter.BaseStream.Position);
