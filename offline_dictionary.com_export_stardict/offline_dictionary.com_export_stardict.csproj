@@ -34,7 +34,10 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AsciiComparer.cs" />
+    <Compile Include="IdxStructure.cs" />
     <Compile Include="ExportStarDict.cs" />
+    <Compile Include="g_ascii_strcasecmp_port.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -306,9 +306,6 @@ namespace offline_dictionary.com_reader_sqlite
             
             // Convert tabs to 4 spaces
             innerHtml = innerHtml.Replace("\t", "    ");
-
-            // Add <br/> for each line break
-            innerHtml = innerHtml.Replace("\n", "<br/>\n");
             
             return innerHtml;
         }
