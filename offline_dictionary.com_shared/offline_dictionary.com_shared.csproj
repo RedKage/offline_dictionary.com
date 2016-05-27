@@ -37,6 +37,9 @@
     <Compile Include="ExportingProgressInfo.cs" />
     <Compile Include="LoadingProgressInfo.cs" />
     <Compile Include="IExporter.cs" />
+    <Compile Include="Messaging\MessageLevel.cs" />
+    <Compile Include="Messaging\MessageObject.cs" />
+    <Compile Include="Messaging\Messaging.cs" />
     <Compile Include="Model\Definition.cs" />
     <Compile Include="Model\GenericDictionary.cs" />
     <Compile Include="Model\Meaning.cs" />

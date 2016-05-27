@@ -1,16 +1,15 @@
-﻿using System;
+﻿using HtmlAgilityPack;
+using offline_dictionary.com_shared.Messaging;
+using offline_dictionary.com_shared.Model;
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Data.SQLite;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using HtmlAgilityPack;
-using offline_dictionary.com_shared;
-using offline_dictionary.com_shared.Model;
 
 namespace offline_dictionary.com_reader_sqlite
 {
@@ -34,6 +33,8 @@ namespace offline_dictionary.com_reader_sqlite
         private readonly GenericDictionary _genericDictionary;
         private static string _connectionString;
         private static int _loadWordsLimit;
+        private int _totalWordsToAdd = 0;
+        private int _wordsAdded = 0;
 
         public LoadFromSqlite(string dbFilePath, int loadWordsLimit = -1)
         {
@@ -63,9 +64,9 @@ namespace offline_dictionary.com_reader_sqlite
             _loadWordsLimit = loadWordsLimit;
         }
 
-        public async Task<GenericDictionary> LoadAsync(IProgress<LoadingProgressInfo> progress)
+        public async Task<GenericDictionary> LoadAsync()
         {
-            List<Task> tasks = new List<Task>();
+            List<Task> loadWordTask = new List<Task>();
 
             // Browse each word from entry table
             foreach (Meaning currentMeaning in GetAllWords(_loadWordsLimit))
@@ -73,35 +74,18 @@ namespace offline_dictionary.com_reader_sqlite
                 Task item = new Task(() => UpdateBigAssDictionary(currentMeaning));
                 item.Start();
                 //item.Wait(); // todo debug
-                tasks.Add(item);
+                loadWordTask.Add(item);
             }
+            _totalWordsToAdd = loadWordTask.Count;
 
-            Task<GenericDictionary> loadTask = new Task<GenericDictionary>(() =>
+            Task loadAllWords = new Task(() =>
             {
-                while (true)
-                {
-                    Thread.Sleep(1000);
+                Task.WaitAll(loadWordTask.ToArray());
+            });
+            loadAllWords.Start();
+            await loadAllWords;
 
-                    LoadingProgressInfo loadingProgressInfo = new LoadingProgressInfo
-                    {
-                        WordsCountToAdd = tasks.Count,
-                        WordsAdded = tasks.Count(t => t.IsCompleted)
-                    };
-
-                    //tasks.RemoveAll(t => t.IsCompleted); // todo fixes stuck tasks?
-
-                    if (progress != null)
-                        progress.Report(loadingProgressInfo);
-
-                    if (loadingProgressInfo.WordsAdded >= loadingProgressInfo.WordsCountToAdd)
-                        break;
-                }
-
-                return _genericDictionary;
-            }, TaskCreationOptions.LongRunning);
-            loadTask.Start();
-
-            return await loadTask;
+            return _genericDictionary;
         }
 
         private void UpdateBigAssDictionary(Meaning currentMeaning)
@@ -117,7 +101,7 @@ namespace offline_dictionary.com_reader_sqlite
                 List<Definition> definitions = GetDefinition(currentMeaning).ToList();
                 if (!definitions.Any())
                 {
-                    Debug.WriteLine($@"[O___o;] Weird, word {currentMeaning} has no definition");
+                    Messaging.Send(MessageLevel.Warn, $@"Weird, word {currentMeaning} has no definition");
                     return;
                 }
 
@@ -125,12 +109,19 @@ namespace offline_dictionary.com_reader_sqlite
                 bool added = _genericDictionary.AllWords.TryAdd(currentMeaning, definitions);
                 if (!added)
                 {
-                    Debug.WriteLine($@"[x____x] Could not add word {currentMeaning}\n");
+                    Messaging.Send(MessageLevel.Error, $@"Could not add word {currentMeaning}");
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($@"[x____x] Unknown error occured for word {currentMeaning}\n{ex.Message}\n{ex.StackTrace}\n\n");
+                Messaging.Send($@"Unknown error occured for word {currentMeaning}\n{ex.Message}\n{ex.StackTrace}\n\n");
+            }
+
+            Interlocked.Increment(ref _wordsAdded);
+            int percent = (int) (_wordsAdded * 100.0 / _totalWordsToAdd);
+            if (_wordsAdded%100 == 0)
+            {
+                Messaging.Send(MessageLevel.Info, $@"Loading... {percent:000}%");
             }
         }
 

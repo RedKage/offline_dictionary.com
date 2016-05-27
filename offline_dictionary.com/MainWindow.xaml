@@ -6,7 +6,7 @@
         mc:Ignorable="d"
         ResizeMode="CanResizeWithGrip"
         Title="MainWindow"
-        Height="480" Width="640"
+        Height="480" Width="840"
         MinHeight="300" MinWidth="500">
     <Grid>
         <Grid.ColumnDefinitions>
@@ -35,7 +35,18 @@
 
         <GroupBox x:Name="ConsoleGroupBox" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Header="Console" HorizontalAlignment="Stretch" Margin="10" VerticalAlignment="Stretch">
             <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0">
-                <TextBox x:Name="Console" HorizontalAlignment="Stretch" Margin="10" TextWrapping="NoWrap" VerticalAlignment="Stretch" HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible" />
+                <RichTextBox x:Name="Console" HorizontalAlignment="Stretch" Margin="10" VerticalAlignment="Stretch" HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible">
+                    <RichTextBox.Resources>
+                        <Style TargetType="{x:Type Paragraph}">
+                            <Setter Property="Margin" Value="0"/>
+                        </Style>
+                        <Style TargetType="{x:Type FlowDocument}">
+                            <Setter Property="PageWidth" Value="9999"/>
+                            <Setter Property="FontFamily" Value="Consolas"/>
+                            <Setter Property="FontSize" Value="12"/>
+                        </Style>
+                    </RichTextBox.Resources>
+                </RichTextBox>
             </Grid>
         </GroupBox>
     </Grid>
