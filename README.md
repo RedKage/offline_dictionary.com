@@ -1,4 +1,5 @@
-This project converts [dictionary.com](http://www.dictionary.com)'s SQLite offline dictionary into an [XDXF](https://github.com/soshial/xdxf_makedict) format.
+This project converts [dictionary.com](http://www.dictionary.com)'s SQLite offline dictionary into an [XDXF](https://github.com/soshial/xdxf_makedict) format and [StarDict](http://www.stardict.org/) format.
+The code is made so that many other format could be implemented in the future.
 
 The reason I did this is explained in this rant [there](http://tacticalfreak.blogspot.com/2016/03/dictionarycom-as-xdxf.html).
 
