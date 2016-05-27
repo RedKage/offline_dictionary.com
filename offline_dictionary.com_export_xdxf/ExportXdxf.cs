@@ -129,7 +129,7 @@ namespace offline_dictionary.com_export_xdxf
 
                     // Notify progression
                     wordsWritten++;
-                    if (wordsWritten % 500 == 0)
+                    if (wordsWritten % 2000 == 0)
                     {
                         int percent = (int)(wordsWritten * 100.0 / wordsToWrite);
                         Messaging.Send(MessageLevel.Info, $"Writing ... {percent:000}%");

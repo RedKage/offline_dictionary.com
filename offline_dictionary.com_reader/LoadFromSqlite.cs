@@ -33,7 +33,7 @@ namespace offline_dictionary.com_reader_sqlite
         private readonly GenericDictionary _genericDictionary;
         private static string _connectionString;
         private static int _loadWordsLimit;
-        private int _totalWordsToAdd = 0;
+        private int? _totalWordsToAdd;
         private int _wordsAdded = 0;
 
         public LoadFromSqlite(string dbFilePath, int loadWordsLimit = -1)
@@ -66,26 +66,29 @@ namespace offline_dictionary.com_reader_sqlite
 
         public async Task<GenericDictionary> LoadAsync()
         {
-            List<Task> loadWordTask = new List<Task>();
-
-            // Browse each word from entry table
-            foreach (Meaning currentMeaning in GetAllWords(_loadWordsLimit))
-            {
-                Task item = new Task(() => UpdateBigAssDictionary(currentMeaning));
-                item.Start();
-                //item.Wait(); // todo debug
-                loadWordTask.Add(item);
-            }
-            _totalWordsToAdd = loadWordTask.Count;
-
             Task loadAllWords = new Task(() =>
-            {
-                Task.WaitAll(loadWordTask.ToArray());
-            });
-            loadAllWords.Start();
-            await loadAllWords;
+           {
+               Messaging.Send("Creating tasks ...");
 
-            return _genericDictionary;
+               List<Task> loadWordTask = new List<Task>();
+
+               // Browse each word from entry table
+               foreach (Meaning currentMeaning in GetAllWords(_loadWordsLimit))
+               {
+                   Task item = new Task(() => UpdateBigAssDictionary(currentMeaning));
+                   item.Start();
+                   //item.Wait(); // todo debug
+                   loadWordTask.Add(item);
+               }
+               _totalWordsToAdd = loadWordTask.Count;
+               
+               Task.WaitAll(loadWordTask.ToArray());
+           });
+
+           loadAllWords.Start();
+           await loadAllWords;
+
+           return _genericDictionary;
         }
 
         private void UpdateBigAssDictionary(Meaning currentMeaning)
@@ -118,10 +121,19 @@ namespace offline_dictionary.com_reader_sqlite
             }
 
             Interlocked.Increment(ref _wordsAdded);
-            int percent = (int) (_wordsAdded * 100.0 / _totalWordsToAdd);
-            if (_wordsAdded%100 == 0)
+            int wordsAdded = _wordsAdded;
+
+            if (wordsAdded % 100 == 0)
             {
-                Messaging.Send(MessageLevel.Info, $@"Loading... {percent:000}%");
+                if (_totalWordsToAdd.HasValue)
+                {
+                    int percent = (int)(wordsAdded * 100.0 / _totalWordsToAdd);
+                    Messaging.Send(MessageLevel.Info, $@"Loading... {percent:000}% ({wordsAdded}/{_totalWordsToAdd} words loaded)");
+                }
+                else
+                {
+                    Messaging.Send(MessageLevel.Info, $@"Loading... {000}% ({wordsAdded} words loaded)");
+                }
             }
         }
 
@@ -294,10 +306,10 @@ namespace offline_dictionary.com_reader_sqlite
             // Convert line breaks to Unix style
             innerHtml = innerHtml.Replace("\r\n", "\n");
             innerHtml = innerHtml.Replace("\r", "\n");
-            
+
             // Convert tabs to 4 spaces
             innerHtml = innerHtml.Replace("\t", "    ");
-            
+
             return innerHtml;
         }
 

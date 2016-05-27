@@ -5,9 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         ResizeMode="CanResizeWithGrip"
-        Title="MainWindow"
+        Title="Offline dictionary.com"
         Height="480" Width="840"
-        MinHeight="300" MinWidth="500">
+        MinHeight="300" MinWidth="500" Icon="res/2.ico">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="250"/>

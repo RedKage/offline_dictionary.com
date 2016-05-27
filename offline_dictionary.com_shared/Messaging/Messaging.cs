@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,10 +9,12 @@ namespace offline_dictionary.com_shared.Messaging
     public static class Messaging
     {
         private const int MessagePoolingIntervalMs = 1000;
-        private static readonly List<MessageObject> Messages = new List<MessageObject>();
+        private static readonly SortedList<long, MessageObject> Messages = new SortedList<long, MessageObject>();
+        private static int _count;
 
         public static event NewMessages MessagePooling;
         public delegate void NewMessages(ICollection<MessageObject> newMessages);
+        
         
         static Messaging()
         {
@@ -23,7 +26,7 @@ namespace offline_dictionary.com_shared.Messaging
                     {
                         if (MessagePooling != null && Messages.Count > 0)
                         {
-                            MessagePooling(Messages.ToList());
+                            MessagePooling(Messages.Values.ToList());
                         }
                         Messages.Clear();
                     }
@@ -54,7 +57,7 @@ namespace offline_dictionary.com_shared.Messaging
         {
             lock (Messages)
             {
-                Messages.Add(message);
+                Messages.Add(_count++, message);
             }
         }
     }
