@@ -3,7 +3,7 @@ The code is made so that many other format could be implemented in the future.
 
 The reason I did this is explained in this rant [there](http://tacticalfreak.blogspot.com/2016/03/dictionarycom-as-xdxf.html).
 
-The technical explanations, trivia, etc. can be found [there](http://tacticalfreak.blogspot.com/p/offline-dictionary.html) and [there]((http://tacticalfreak.blogspot.com/2016/05/dictionarycom-as-stardict-dictionary.html)
+The technical explanations, trivia, etc. can be found [there](http://tacticalfreak.blogspot.com/p/offline-dictionary.html) and [there](http://tacticalfreak.blogspot.com/2016/05/dictionarycom-as-stardict-dictionary.html)
 
 I couldn't include dictionary.com's SQLite offline dictionary as this exceeds GitHub's max file size.
 Instead, you can grab it there:
