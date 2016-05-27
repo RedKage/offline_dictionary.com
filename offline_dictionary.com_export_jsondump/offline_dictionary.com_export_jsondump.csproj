@@ -15,7 +15,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
+    <Optimize>true</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -28,6 +28,12 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>tacticalfreak_key.pfx</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
@@ -49,6 +55,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="tacticalfreak_key.pfx" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

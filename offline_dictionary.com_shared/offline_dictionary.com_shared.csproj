@@ -15,7 +15,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
+    <Optimize>true</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -29,13 +29,17 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>tacticalfreak_key.pfx</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ExportingProgressInfo.cs" />
-    <Compile Include="LoadingProgressInfo.cs" />
     <Compile Include="IExporter.cs" />
     <Compile Include="Messaging\MessageLevel.cs" />
     <Compile Include="Messaging\MessageObject.cs" />
@@ -45,6 +49,9 @@
     <Compile Include="Model\Meaning.cs" />
     <Compile Include="Model\WordSuggestion.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="tacticalfreak_key.pfx" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

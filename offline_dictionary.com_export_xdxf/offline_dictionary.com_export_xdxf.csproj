@@ -15,7 +15,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
+    <Optimize>true</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -47,6 +47,12 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>tacticalfreak_key.pfx</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -60,6 +66,7 @@
     <None Include="Specs\example-eng-fra.xdxf" />
     <None Include="Specs\xdxf_description.md" />
     <None Include="Specs\xdxf_strict.dtd" />
+    <None Include="tacticalfreak_key.pfx" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\offline_dictionary.com_reader\offline_dictionary.com_reader_sqlite.csproj">

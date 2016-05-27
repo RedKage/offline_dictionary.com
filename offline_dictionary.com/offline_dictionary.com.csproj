@@ -59,6 +59,12 @@
   <PropertyGroup>
     <StartupObject>offline_dictionary.com.App</StartupObject>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>tacticalfreak_key.pfx</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
@@ -115,6 +121,7 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <AppDesigner Include="Properties\" />
+    <None Include="tacticalfreak_key.pfx" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

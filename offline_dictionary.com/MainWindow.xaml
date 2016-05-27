@@ -35,7 +35,7 @@
 
         <GroupBox x:Name="ConsoleGroupBox" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Header="Console" HorizontalAlignment="Stretch" Margin="10" VerticalAlignment="Stretch">
             <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0">
-                <RichTextBox x:Name="Console" HorizontalAlignment="Stretch" Margin="10" VerticalAlignment="Stretch" HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible">
+                <RichTextBox x:Name="Console" HorizontalAlignment="Stretch" Margin="10" VerticalAlignment="Stretch" HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible" IsReadOnly="True" IsReadOnlyCaretVisible="True">
                     <RichTextBox.Resources>
                         <Style TargetType="{x:Type Paragraph}">
                             <Setter Property="Margin" Value="0"/>

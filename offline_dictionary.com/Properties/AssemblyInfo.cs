@@ -8,12 +8,12 @@ using System.Windows;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 
-[assembly: AssemblyTitle("offline_dictionary.com")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Offline dictionary.com")]
+[assembly: AssemblyDescription("Converts the dictionary.com's SQLite word database into multiple dictionary formats")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("offline_dictionary.com")]
-[assembly: AssemblyCopyright("Copyright ©  2016")]
+[assembly: AssemblyProduct("Offline dictionary.com")]
+[assembly: AssemblyCopyright("Copyright © TacticalFreak 2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -56,3 +56,5 @@ using System.Windows;
 
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: NeutralResourcesLanguage("en-US")]
+

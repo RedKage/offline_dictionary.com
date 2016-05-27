@@ -103,8 +103,87 @@ namespace offline_dictionary.com
                 LoadFromSqlite loadFromSqlite = new LoadFromSqlite(SqliteFilePath, LoadWordsLimit);
                 Dictionary = await loadFromSqlite.LoadAsync();
 
+                EnableExports();
+
                 Messaging.Send("Loading done:");
                 Messaging.Send($"{Dictionary}{Environment.NewLine}");
+            }
+            catch (Exception ex)
+            {
+                Messaging.Send(MessageLevel.Fatal, ex.Message);
+            }
+            finally
+            {
+                EnableLoaders();
+            }
+        }
+
+        private async void LoadFromJsonDumpButton_Click(object sender, RoutedEventArgs e)
+        {
+            Messaging.Send($"Loading JSON dump '{JsonDumpFilePath}' ...");
+
+            DisableExports();
+            DisableLoaders();
+
+            try
+            {
+                LoadFromJsonDump loadFromJsonDump = new LoadFromJsonDump(JsonDumpFilePath);
+                Dictionary = await loadFromJsonDump.LoadAsync();
+
+                EnableExports();
+
+                Messaging.Send("Loading done:");
+                Messaging.Send($"{Dictionary}{Environment.NewLine}");
+            }
+            catch (Exception ex)
+            {
+                Messaging.Send(MessageLevel.Fatal, ex.Message);
+            }
+            finally
+            {
+                EnableLoaders();
+            }
+        }
+
+        private async void ConvertToXdxfButton_Click(object sender, RoutedEventArgs e)
+        {
+            Messaging.Send($"Exporting to XDXF to '{OutDirPath}' ...");
+
+            DisableExports();
+            DisableLoaders();
+
+            try
+            {
+                ExportXdxf exportXdxf = new ExportXdxf(Dictionary, OutDirPath);
+                await exportXdxf.ExportAsync();
+
+                Messaging.Send($"Exported!{Environment.NewLine}");
+            }
+            catch (Exception ex)
+            {
+                Messaging.Send(MessageLevel.Fatal, ex.Message);
+            }
+            finally
+            {
+                EnableExports();
+                EnableLoaders();
+            }
+            
+        }
+
+        private async void ConvertToStarDictButton_Click(object sender, RoutedEventArgs e)
+        {
+            Messaging.Send($"Exporting to StarDict to '{OutDirPath}' ...");
+
+            DisableExports();
+            DisableLoaders();
+
+            try
+            {
+                ExportStarDict exportStarDict = new ExportStarDict(Dictionary, OutDirPath);
+                await exportStarDict.ExportAsync();
+
+                Messaging.Send($"Exported!{Environment.NewLine}");
             }
             catch (Exception ex)
             {
@@ -117,58 +196,6 @@ namespace offline_dictionary.com
             }
         }
 
-        private async void LoadFromJsonDumpButton_Click(object sender, RoutedEventArgs e)
-        {
-            Messaging.Send($"Loading JSON dump '{JsonDumpFilePath}' ...");
-
-            DisableExports();
-            DisableLoaders();
-
-            LoadFromJsonDump loadFromJsonDump = new LoadFromJsonDump(JsonDumpFilePath);
-
-            Dictionary = await loadFromJsonDump.LoadAsync(null);
-
-            EnableExports();
-            EnableLoaders();
-
-            Messaging.Send("Loading done:");
-            Messaging.Send($"{Dictionary}{Environment.NewLine}");
-        }
-
-        private async void ConvertToXdxfButton_Click(object sender, RoutedEventArgs e)
-        {
-            Messaging.Send($"Exporting to XDXF to '{OutDirPath}' ...");
-
-            DisableExports();
-            DisableLoaders();
-
-            ExportXdxf exportXdxf = new ExportXdxf(Dictionary, OutDirPath);
-
-            await exportXdxf.ExportAsync(null);
-
-            EnableExports();
-            EnableLoaders();
-
-            Messaging.Send($"Exported!{Environment.NewLine}");
-        }
-
-        private async void ConvertToStarDictButton_Click(object sender, RoutedEventArgs e)
-        {
-            Messaging.Send($"Exporting to StarDict to '{OutDirPath}' ...");
-
-            DisableExports();
-            DisableLoaders();
-
-            ExportStarDict exportStarDict = new ExportStarDict(Dictionary, OutDirPath);
-
-            await exportStarDict.ExportAsync(null);
-
-            EnableExports();
-            EnableLoaders();
-
-            Messaging.Send($"Exported!{Environment.NewLine}");
-        }
-
         private async void ConvertToJsonDumpButton_Click(object sender, RoutedEventArgs e)
         {
             Messaging.Send($"Exporting to JSON dump to '{JsonDumpOutDirPath}' ...");
@@ -176,14 +203,22 @@ namespace offline_dictionary.com
             DisableExports();
             DisableLoaders();
 
-            ExportJsonDump exportJsonDump = new ExportJsonDump(Dictionary, JsonDumpOutDirPath);
+            try
+            {
+                ExportJsonDump exportJsonDump = new ExportJsonDump(Dictionary, JsonDumpOutDirPath);
+                await exportJsonDump.ExportAsync();
 
-            await exportJsonDump.ExportAsync(null);
-
-            EnableExports();
-            EnableLoaders();
-
-            Messaging.Send($"Exported!{Environment.NewLine}");
+                Messaging.Send($"Exported!{Environment.NewLine}");
+            }
+            catch (Exception ex)
+            {
+                Messaging.Send(MessageLevel.Fatal, ex.Message);
+            }
+            finally
+            {
+                EnableExports();
+                EnableLoaders();
+            }
         }
 
         #endregion

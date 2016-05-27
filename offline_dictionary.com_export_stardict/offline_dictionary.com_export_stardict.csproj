@@ -15,7 +15,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
+    <Optimize>true</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -28,6 +28,12 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>tacticalfreak_key.pfx</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -54,7 +60,9 @@
       <Name>offline_dictionary.com_shared</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="tacticalfreak_key.pfx" />
+  </ItemGroup>
   <ItemGroup>
     <Content Include="dictzip.exe">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

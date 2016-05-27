@@ -11,13 +11,15 @@ namespace offline_dictionary.com
 {
     public class KewlConsole
     {
+        private static readonly Brush ConsoleBgColor = Brushes.LightGray;
         private readonly SynchronizationContext _uiContext;
         private readonly RichTextBox _console;
-
+        
         public KewlConsole(SynchronizationContext uiContext, RichTextBox consoleRichTextBox)
         {
             _uiContext = uiContext;
             _console = consoleRichTextBox;
+            _console.Background = ConsoleBgColor;
         }
 
         public async Task Out(ICollection<MessageObject> messages)
@@ -41,12 +43,12 @@ namespace offline_dictionary.com
                     case MessageLevel.Debug:
                         kewlLevel = "[Ò___Ó] ";
                         foregroundColor = Brushes.Black;
-                        backgroundColor = Brushes.LightGray;
+                        backgroundColor = Brushes.DarkGray;
                         break;
                     case MessageLevel.Info:
                         kewlLevel = "[o___o] ";
                         foregroundColor = Brushes.Black;
-                        backgroundColor = Brushes.White;
+                        backgroundColor = ConsoleBgColor;
                         break;
                     case MessageLevel.Warn:
                         kewlLevel = "[O___o;]";
@@ -66,7 +68,7 @@ namespace offline_dictionary.com
                     default:
                         kewlLevel = "[      ]";
                         foregroundColor = Brushes.Black;
-                        backgroundColor = Brushes.White;
+                        backgroundColor = ConsoleBgColor;
                         break;
                 }
 
@@ -75,10 +77,12 @@ namespace offline_dictionary.com
                 {
                     _uiContext.Send(x =>
                     {
+                        if (string.IsNullOrWhiteSpace(line))
+                            kewlLevel = string.Empty;
+
                         TextRange textRange = new TextRange(_console.Document.ContentEnd, _console.Document.ContentEnd)
                         {
-                            Text =
-                                $" [{now.Hour:00}:{now.Minute:00}:{now.Second:00}]\t{kewlLevel}\t{line} {Environment.NewLine}"
+                            Text = $" [{now.Hour:00}:{now.Minute:00}:{now.Second:00}] {kewlLevel} {line} {Environment.NewLine}"
                         };
 
                         textRange.ApplyPropertyValue(TextElement.ForegroundProperty, foregroundColor);

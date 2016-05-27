@@ -1,9 +1,7 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using offline_dictionary.com_shared;
 using offline_dictionary.com_shared.Model;
 
 namespace offline_dictionary.com_reader_jsondump
@@ -19,7 +17,7 @@ namespace offline_dictionary.com_reader_jsondump
             _jsonDumpFilePath = jsonDumpFilePath;
         }
 
-        public async Task<GenericDictionary> LoadAsync(IProgress<LoadingProgressInfo> progress)
+        public async Task<GenericDictionary> LoadAsync()
         {
             Task<GenericDictionary> convert = new Task<GenericDictionary>(() =>
             {

@@ -5,6 +5,6 @@ namespace offline_dictionary.com_shared
 {
     public interface IExporter
     {
-        Task ExportAsync(IProgress<ExportingProgressInfo> progress);
+        Task ExportAsync();
     }
 }

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using offline_dictionary.com_shared;
+using offline_dictionary.com_shared.Messaging;
 using offline_dictionary.com_shared.Model;
 
 namespace offline_dictionary.com_export_stardict
@@ -25,22 +26,13 @@ namespace offline_dictionary.com_export_stardict
 
         private static readonly string DictZipBinaryPath = $@"{AppDomain.CurrentDomain.BaseDirectory}\dictzip.exe";
 
-        private readonly ExportingProgressInfo _exportingProgressInfo;
-
-
         public ExportStarDict(GenericDictionary genericDictionary, string outputDirPath)
         {
             _genericDictionary = genericDictionary;
             _outputDirPath = outputDirPath;
-
-            _exportingProgressInfo = new ExportingProgressInfo
-            {
-                WordsCountToWrite = genericDictionary.AllWords.Count,
-                WordsWritten = 0
-            };
         }
 
-        public async Task ExportAsync(IProgress<ExportingProgressInfo> progress)
+        public async Task ExportAsync()
         {
             string basePath = $@"{_outputDirPath}\{_genericDictionary.Name}-{_genericDictionary.Version}";
 
@@ -50,7 +42,7 @@ namespace offline_dictionary.com_export_stardict
 
             await CreateIdxInMemory();
 
-            await WriteDict(progress, outDictFilePath);
+            await WriteDict(outDictFilePath);
 
             long idxSize = WriteIdx(outIdxFilePath);
 
@@ -78,6 +70,8 @@ namespace offline_dictionary.com_export_stardict
         /// </summary>
         private async Task CreateIdxInMemory()
         {
+            Messaging.Send(MessageLevel.Info, "Creating .idx in memory ...");
+
             Task indexCreation = new Task(() =>
             {
                 _indexByWord = new SortedDictionary<string, IdxStructure>(new AsciiComparer());
@@ -131,12 +125,20 @@ namespace offline_dictionary.com_export_stardict
             });
             indexCreation.Start();
             await indexCreation;
+
+            Messaging.Send(MessageLevel.Info, $"Done, {_indexByWord.Count} word entries ready.");
         }
 
-        private async Task WriteDict(IProgress<ExportingProgressInfo> progress, string targetDictFilePath)
+        private async Task WriteDict(string targetDictFilePath)
         {
+            Messaging.Send(MessageLevel.Info, "Writing .dict ...");
+            int wordsToWrite = _indexByWord.Count;
+            long dictSize = 0;
+
             Task export = new Task(() =>
             {
+                int wordsWritten = 0;
+
                 using (FileStream dictStream = new FileStream(targetDictFilePath, FileMode.Create))
                 {
                     using (BinaryWriter dictWriter = new BinaryWriter(dictStream, Encoding.UTF8))
@@ -180,9 +182,12 @@ namespace offline_dictionary.com_export_stardict
                             }
 
                             // Notify progression
-                            _exportingProgressInfo.WordsWritten++;
-                            if (progress != null && _exportingProgressInfo.WordsWritten % 500 == 0)
-                                progress.Report(_exportingProgressInfo);
+                            wordsWritten++;
+                            if (wordsWritten % 500 == 0)
+                            {
+                                int percent = (int)(wordsWritten * 100.0 / wordsToWrite);
+                                Messaging.Send(MessageLevel.Info, $"Writing ... {percent:000}%");
+                            }
 
                             // Update length in .idx
                             uint definitionPostionEnd = Convert.ToUInt32(dictWriter.BaseStream.Position);
@@ -201,15 +206,20 @@ namespace offline_dictionary.com_export_stardict
                                 }
                             }
                         }
+                        dictSize = dictStream.Position;
                     }
                 }
             });
             export.Start();
             await export;
+
+            Messaging.Send(MessageLevel.Info, $"Done, .dict written ({dictSize} bytes)");
         }
 
         private long WriteIdx(string targetIdxFilePath)
         {
+            Messaging.Send(MessageLevel.Info, "Writing .idx ...");
+
             long idxUncompressedLength = 0;
 
             using (FileStream idxSteam = new FileStream(targetIdxFilePath, FileMode.Create))
@@ -246,11 +256,14 @@ namespace offline_dictionary.com_export_stardict
                 }
             }
 
+            Messaging.Send(MessageLevel.Info, $"Done, .idx written ({idxUncompressedLength} bytes uncompressed)");
             return idxUncompressedLength;
         }
 
         private static void CompressDictZip(string targetDict, bool removeDict = true)
         {
+            Messaging.Send(MessageLevel.Info, "Compression, .dict ...");
+
             if (!File.Exists(targetDict))
                 throw new FileNotFoundException(targetDict, targetDict);
 
@@ -276,10 +289,14 @@ namespace offline_dictionary.com_export_stardict
 
                 exeProcess.WaitForExit();
             }
+
+            Messaging.Send(MessageLevel.Info, "Done, .dict compressed");
         }
 
         private void WriteIfo(string targetIfoFilePath, long idxSize)
         {
+            Messaging.Send(MessageLevel.Info, "Writing, .ifo ...");
+
             using (TextWriter textWriter = new StreamWriter(targetIfoFilePath, false, new UTF8Encoding(false)))
             {
                 textWriter.NewLine = "\n";
@@ -296,6 +313,8 @@ namespace offline_dictionary.com_export_stardict
                 textWriter.WriteLine($"description={_genericDictionary.Description}");
                 textWriter.WriteLine("sametypesequence=h");
             }
+
+            Messaging.Send(MessageLevel.Info, "Done, .ifo written");
         }
 
         private static void WriteWordMeaningHtmlHeader(BinaryWriter dictWriter, Meaning meaning, int meaningIndex, int totalMeanings)

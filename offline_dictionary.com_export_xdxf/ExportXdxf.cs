@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Schema;
 using offline_dictionary.com_shared;
+using offline_dictionary.com_shared.Messaging;
 using offline_dictionary.com_shared.Model;
 
 namespace offline_dictionary.com_export_xdxf
@@ -50,7 +51,7 @@ namespace offline_dictionary.com_export_xdxf
             _encoding = encoding;
         }
 
-        public async Task ExportAsync(IProgress<ExportingProgressInfo> progress)
+        public async Task ExportAsync()
         {
             Encoding enc = _encoding ?? Encoding.Unicode; // UTF-16 is default
 
@@ -62,75 +63,77 @@ namespace offline_dictionary.com_export_xdxf
             {
                 using (XmlWriter xmlWriter = XmlWriter.Create(textWriter, XdxfWriterSettings))
                 {
-                    await CreateXdxfToStreamAsync(progress, _genericDictionary, xmlWriter);
+                    await CreateXdxfToStreamAsync(xmlWriter);
                 }
             }
         }
 
-        private static async Task CreateXdxfToStreamAsync(IProgress<ExportingProgressInfo> progress,
-            GenericDictionary genericDictionary, XmlWriter xmlWriter)
+        private async Task CreateXdxfToStreamAsync(XmlWriter xmlWriter)
         {
-            xmlWriter.WriteStartDocument();
-
-            // XDXF
-            xmlWriter.WriteStartElement("xdxf");
-            xmlWriter.WriteAttributeString("lang_from", "ENG");
-            xmlWriter.WriteAttributeString("lang_to", "ENG");
-            xmlWriter.WriteAttributeString("format", "visual");
-            xmlWriter.WriteAttributeString("revision", XdxfVersion); // app version + sqlite version
-
-            xmlWriter.WriteStartElement("description");
-            xmlWriter.WriteRaw(genericDictionary.Description);
-            xmlWriter.WriteEndElement();
-
-            xmlWriter.WriteStartElement("full_name");
-            xmlWriter.WriteRaw(genericDictionary.FullName);
-            xmlWriter.WriteEndElement();
-
-            // Meta
-            xmlWriter.WriteStartElement("meta_info");
-
-            xmlWriter.WriteStartElement("title");
-            xmlWriter.WriteRaw(genericDictionary.Name);
-            xmlWriter.WriteEndElement();
-
-            xmlWriter.WriteStartElement("full_title");
-            xmlWriter.WriteRaw(genericDictionary.FullName);
-            xmlWriter.WriteEndElement();
-
-            xmlWriter.WriteStartElement("description");
-            xmlWriter.WriteRaw(genericDictionary.Description);
-            xmlWriter.WriteEndElement();
-
-            xmlWriter.WriteStartElement("file_ver");
-            xmlWriter.WriteRaw(genericDictionary.Version);
-            xmlWriter.WriteEndElement();
-
-            xmlWriter.WriteStartElement("creation_date");
-            xmlWriter.WriteRaw($"{DateTime.UtcNow:dd-MM-yyyy}");
-            xmlWriter.WriteEndElement();
-
-            xmlWriter.WriteEndElement();
-            xmlWriter.Flush();
-
-            // Lexicon
-            xmlWriter.WriteStartElement("lexicon");
+            Messaging.Send(MessageLevel.Info, "Writing .xdxf ...");
+            int wordsToWrite = _genericDictionary.AllWords.Count;
 
             Task export = new Task(() =>
             {
-                ExportingProgressInfo exportingProgressInfo = new ExportingProgressInfo
-                {
-                    WordsCountToWrite = genericDictionary.AllWords.Count,
-                    WordsWritten = 0
-                };
+                int wordsWritten = 0;
 
-                foreach (KeyValuePair<Meaning, List<Definition>> article in genericDictionary.AllWords)
+                xmlWriter.WriteStartDocument();
+
+                // XDXF
+                xmlWriter.WriteStartElement("xdxf");
+                xmlWriter.WriteAttributeString("lang_from", "ENG");
+                xmlWriter.WriteAttributeString("lang_to", "ENG");
+                xmlWriter.WriteAttributeString("format", "visual");
+                xmlWriter.WriteAttributeString("revision", XdxfVersion); // app version + sqlite version
+
+                xmlWriter.WriteStartElement("description");
+                xmlWriter.WriteRaw(_genericDictionary.Description);
+                xmlWriter.WriteEndElement();
+
+                xmlWriter.WriteStartElement("full_name");
+                xmlWriter.WriteRaw(_genericDictionary.FullName);
+                xmlWriter.WriteEndElement();
+
+                // Meta
+                xmlWriter.WriteStartElement("meta_info");
+
+                xmlWriter.WriteStartElement("title");
+                xmlWriter.WriteRaw(_genericDictionary.Name);
+                xmlWriter.WriteEndElement();
+
+                xmlWriter.WriteStartElement("full_title");
+                xmlWriter.WriteRaw(_genericDictionary.FullName);
+                xmlWriter.WriteEndElement();
+
+                xmlWriter.WriteStartElement("description");
+                xmlWriter.WriteRaw(_genericDictionary.Description);
+                xmlWriter.WriteEndElement();
+
+                xmlWriter.WriteStartElement("file_ver");
+                xmlWriter.WriteRaw(_genericDictionary.Version);
+                xmlWriter.WriteEndElement();
+
+                xmlWriter.WriteStartElement("creation_date");
+                xmlWriter.WriteRaw($"{DateTime.UtcNow:dd-MM-yyyy}");
+                xmlWriter.WriteEndElement();
+
+                xmlWriter.WriteEndElement();
+                xmlWriter.Flush();
+
+                // Lexicon
+                xmlWriter.WriteStartElement("lexicon");
+
+                foreach (KeyValuePair<Meaning, List<Definition>> article in _genericDictionary.AllWords)
                 {
                     CreateArticle(xmlWriter, article.Key, article.Value);
-                    exportingProgressInfo.WordsWritten++;
 
-                    if (progress != null && exportingProgressInfo.WordsWritten % 500 == 0)
-                        progress.Report(exportingProgressInfo);
+                    // Notify progression
+                    wordsWritten++;
+                    if (wordsWritten % 500 == 0)
+                    {
+                        int percent = (int)(wordsWritten * 100.0 / wordsToWrite);
+                        Messaging.Send(MessageLevel.Info, $"Writing ... {percent:000}%");
+                    }
                 }
 
                 xmlWriter.WriteEndDocument();
@@ -138,6 +141,8 @@ namespace offline_dictionary.com_export_xdxf
             });
             export.Start();
             await export;
+
+            Messaging.Send(MessageLevel.Info, "Done, .xdxf written ...");
         }
 
         private static void CreateArticle(XmlWriter xmlWriter, Meaning meaning, IEnumerable<Definition> definitions)

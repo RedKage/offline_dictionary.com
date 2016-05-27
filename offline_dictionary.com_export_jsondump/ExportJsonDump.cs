@@ -33,7 +33,7 @@ namespace offline_dictionary.com_export_jsondump
             _outputDirPath = outputDirPath;
         }
 
-        public async Task ExportAsync(IProgress<ExportingProgressInfo> progress)
+        public async Task ExportAsync()
         {
             string outJsonDumpFilePath = $@"{_outputDirPath}\{_genericDictionary.Name}-{_genericDictionary.Version}.json.gz";
 
