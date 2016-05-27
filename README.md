@@ -2,7 +2,7 @@ This project converts [dictionary.com](http://www.dictionary.com)'s SQLite offli
 
 The reason I did this is explained in this rant [there](http://tacticalfreak.blogspot.com/2016/03/dictionarycom-as-xdxf.html).
 
-The technical explanations, trivia, etc. can be found [there](http://tacticalfreak.blogspot.com/p/offline-dictionary.html)
+The technical explanations, trivia, etc. can be found [there](http://tacticalfreak.blogspot.com/p/offline-dictionary.html) and [there](tacticalfreak.blogspot.com/2016/05/dictionarycom-as-stardict-dictionary.html)
 
 I couldn't include dictionary.com's SQLite offline dictionary as this exceeds GitHub's max file size.
 Instead, you can grab it there:
@@ -13,6 +13,6 @@ You need both files. If the journal is missing, you will have SQLException sayin
 
 ---
 
-## License ## 
-|![http://i.imgur.com/oGGeSQP.png](http://i.imgur.com/oGGeSQP.png)|The license for "DictionaryDotComToXdxf" is the [WTFPL](http://www.wtfpl.net/): _Do What the Fuck You Want to Public License_.|
+## License ##
+|![http://i.imgur.com/oGGeSQP.png](http://i.imgur.com/oGGeSQP.png)|The license for offline_dictionary.com" is the [WTFPL](http://www.wtfpl.net/): _Do What the Fuck You Want to Public License_.|
 |:----------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------|
