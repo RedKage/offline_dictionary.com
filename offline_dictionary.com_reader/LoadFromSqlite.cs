@@ -10,10 +10,11 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using offline_dictionary.com_shared;
 
 namespace offline_dictionary.com_reader_sqlite
 {
-    public class LoadFromSqlite
+    public class LoadFromSqlite : IReader
     {
         private const string DictionayName =
             "dictionary.com";

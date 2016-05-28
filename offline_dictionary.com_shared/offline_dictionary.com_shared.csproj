@@ -40,6 +40,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IReader.cs" />
     <Compile Include="IExporter.cs" />
     <Compile Include="Messaging\MessageLevel.cs" />
     <Compile Include="Messaging\MessageObject.cs" />

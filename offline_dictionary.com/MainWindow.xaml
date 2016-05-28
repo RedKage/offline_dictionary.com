@@ -7,7 +7,7 @@
         ResizeMode="CanResizeWithGrip"
         Title="Offline dictionary.com"
         Height="480" Width="840"
-        MinHeight="300" MinWidth="500" Icon="res/2.ico">
+        MinHeight="300" MinWidth="500" Icon="res/2.ico" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="250"/>

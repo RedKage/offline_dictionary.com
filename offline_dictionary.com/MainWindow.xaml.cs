@@ -1,31 +1,21 @@
-﻿using offline_dictionary.com_export_jsondump;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Windows;
+using Microsoft.WindowsAPICodePack.Dialogs;
+using offline_dictionary.com_export_jsondump;
 using offline_dictionary.com_export_stardict;
 using offline_dictionary.com_export_xdxf;
 using offline_dictionary.com_reader_jsondump;
 using offline_dictionary.com_reader_sqlite;
+using offline_dictionary.com_shared;
 using offline_dictionary.com_shared.Messaging;
 using offline_dictionary.com_shared.Model;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Windows;
 
 namespace offline_dictionary.com
 {
     public partial class MainWindow
     {
-        private const string SqliteFilePath =
-            @"F:\android-08-08-primary.sqlite";
-
-        private const string JsonDumpFilePath =
-            @"F:\dictionary.com-5.5.2_08-08.json.gz";
-
-        private const string JsonDumpOutDirPath =
-            @"F:\";
-
-        private const string OutDirPath =
-            @"D:\Work\Dev\offline_dictionary.com\out\X-StarDict_3.0.4_rev10\Bin\StarDict\dic\dictionary.com-5.5.2_08-08";
-
 #if DEBUG
         private const int LoadWordsLimit = 1000;
 #endif
@@ -89,18 +79,56 @@ namespace offline_dictionary.com
                 true;
         }
 
+        private string ChooseFile(string title, string extension)
+        {
+            CommonOpenFileDialog dialog = new CommonOpenFileDialog
+            {
+                DefaultExtension = $"{extension}",
+                EnsureFileExists = true,
+                InitialDirectory = AppDomain.CurrentDomain.BaseDirectory,
+                Multiselect = false,
+                Title = title
+            };
+
+            CommonFileDialogResult result = dialog.ShowDialog();
+            return result == CommonFileDialogResult.Ok
+                ? dialog.FileName
+                : null;
+        }
+
+        private string ChooseFolder(string title)
+        {
+            CommonOpenFileDialog dialog = new CommonOpenFileDialog
+            {
+                IsFolderPicker = true,
+                EnsureFileExists = true,
+                InitialDirectory = AppDomain.CurrentDomain.BaseDirectory,
+                Multiselect = false,
+                Title = title
+            };
+
+            CommonFileDialogResult result = dialog.ShowDialog();
+            return result == CommonFileDialogResult.Ok
+                ? dialog.FileName
+                : null;
+        }
+
         #region Events
 
         private async void LoadFromSqliteButton_Click(object sender, RoutedEventArgs e)
         {
-            Messaging.Send($"Loading SQLite '{SqliteFilePath}' ...");
+            string sqliteFilePath = ChooseFile("Select the SQLite file", ".sqlite");
+            if(string.IsNullOrEmpty(sqliteFilePath))
+                return;
+
+            Messaging.Send($"Loading SQLite '{sqliteFilePath}' ...");
 
             DisableExports();
             DisableLoaders();
 
             try
             {
-                LoadFromSqlite loadFromSqlite = new LoadFromSqlite(SqliteFilePath, LoadWordsLimit);
+                IReader loadFromSqlite = new LoadFromSqlite(sqliteFilePath, LoadWordsLimit);
                 Dictionary = await loadFromSqlite.LoadAsync();
 
                 EnableExports();
@@ -120,14 +148,18 @@ namespace offline_dictionary.com
 
         private async void LoadFromJsonDumpButton_Click(object sender, RoutedEventArgs e)
         {
-            Messaging.Send($"Loading JSON dump '{JsonDumpFilePath}' ...");
+            string jsonDumpFilePath = ChooseFile("Select the JSON dump file", ".json.gz");
+            if (string.IsNullOrEmpty(jsonDumpFilePath))
+                return;
+
+            Messaging.Send($"Loading JSON dump '{jsonDumpFilePath}' ...");
 
             DisableExports();
             DisableLoaders();
 
             try
             {
-                LoadFromJsonDump loadFromJsonDump = new LoadFromJsonDump(JsonDumpFilePath);
+                IReader loadFromJsonDump = new LoadFromJsonDump(jsonDumpFilePath);
                 Dictionary = await loadFromJsonDump.LoadAsync();
 
                 EnableExports();
@@ -147,14 +179,18 @@ namespace offline_dictionary.com
 
         private async void ConvertToXdxfButton_Click(object sender, RoutedEventArgs e)
         {
-            Messaging.Send($"Exporting to XDXF to '{OutDirPath}' ...");
+            string outDirPath = ChooseFolder("Select where to save the XDXF");
+            if (string.IsNullOrEmpty(outDirPath))
+                return;
+
+            Messaging.Send($"Exporting to XDXF to '{outDirPath}' ...");
 
             DisableExports();
             DisableLoaders();
 
             try
             {
-                ExportXdxf exportXdxf = new ExportXdxf(Dictionary, OutDirPath);
+                IExporter exportXdxf = new ExportXdxf(Dictionary, outDirPath);
                 await exportXdxf.ExportAsync();
 
                 Messaging.Send($"Exported!{Environment.NewLine}");
@@ -173,14 +209,18 @@ namespace offline_dictionary.com
 
         private async void ConvertToStarDictButton_Click(object sender, RoutedEventArgs e)
         {
-            Messaging.Send($"Exporting to StarDict to '{OutDirPath}' ...");
+            string outDirPath = ChooseFolder("Select where to save the StarDict files");
+            if (string.IsNullOrEmpty(outDirPath))
+                return;
+
+            Messaging.Send($"Exporting to StarDict to '{outDirPath}' ...");
 
             DisableExports();
             DisableLoaders();
 
             try
             {
-                ExportStarDict exportStarDict = new ExportStarDict(Dictionary, OutDirPath);
+                IExporter exportStarDict = new ExportStarDict(Dictionary, outDirPath);
                 await exportStarDict.ExportAsync();
 
                 Messaging.Send($"Exported!{Environment.NewLine}");
@@ -198,14 +238,18 @@ namespace offline_dictionary.com
 
         private async void ConvertToJsonDumpButton_Click(object sender, RoutedEventArgs e)
         {
-            Messaging.Send($"Exporting to JSON dump to '{JsonDumpOutDirPath}' ...");
+            string outDirPath = ChooseFolder("Select where to save the JSON dump file");
+            if (string.IsNullOrEmpty(outDirPath))
+                return;
+
+            Messaging.Send($"Exporting to JSON dump to '{outDirPath}' ...");
 
             DisableExports();
             DisableLoaders();
 
             try
             {
-                ExportJsonDump exportJsonDump = new ExportJsonDump(Dictionary, JsonDumpOutDirPath);
+                IExporter exportJsonDump = new ExportJsonDump(Dictionary, outDirPath);
                 await exportJsonDump.ExportAsync();
 
                 Messaging.Send($"Exported!{Environment.NewLine}");

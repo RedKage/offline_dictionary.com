@@ -2,11 +2,12 @@
 using System.IO.Compression;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using offline_dictionary.com_shared;
 using offline_dictionary.com_shared.Model;
 
 namespace offline_dictionary.com_reader_jsondump
 {
-    public class LoadFromJsonDump
+    public class LoadFromJsonDump : IReader
     {
         private readonly string _jsonDumpFilePath;
 
