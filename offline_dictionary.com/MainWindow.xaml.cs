@@ -20,7 +20,7 @@ namespace offline_dictionary.com
         private const int LoadWordsLimit = 1000;
 #endif
 #if !DEBUG
-        private const int LoadWordsLimit = 100;
+        private const int LoadWordsLimit = -1;
 #endif
 
         private SynchronizationContext UiContext { get; }
