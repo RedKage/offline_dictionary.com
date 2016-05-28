@@ -20,7 +20,7 @@ namespace offline_dictionary.com
         private const int LoadWordsLimit = 1000;
 #endif
 #if !DEBUG
-        private const int LoadWordsLimit = -1;
+        private const int LoadWordsLimit = 100;
 #endif
 
         private SynchronizationContext UiContext { get; }
@@ -79,11 +79,18 @@ namespace offline_dictionary.com
                 true;
         }
 
-        private string ChooseFile(string title, string extension)
+        private string ChooseFile(string title, string extensionTitle, string extension)
         {
             CommonOpenFileDialog dialog = new CommonOpenFileDialog
             {
-                DefaultExtension = $"{extension}",
+                Filters = {
+                    new CommonFileDialogFilter
+                    {
+                        DisplayName = extensionTitle,
+                        Extensions = { $"{extension}" },
+                        ShowExtensions = true
+                    }
+                },
                 EnsureFileExists = true,
                 InitialDirectory = AppDomain.CurrentDomain.BaseDirectory,
                 Multiselect = false,
@@ -117,7 +124,7 @@ namespace offline_dictionary.com
 
         private async void LoadFromSqliteButton_Click(object sender, RoutedEventArgs e)
         {
-            string sqliteFilePath = ChooseFile("Select the SQLite file", ".sqlite");
+            string sqliteFilePath = ChooseFile("Select the SQLite file", "SQLite database", "sqlite");
             if(string.IsNullOrEmpty(sqliteFilePath))
                 return;
 
@@ -148,7 +155,7 @@ namespace offline_dictionary.com
 
         private async void LoadFromJsonDumpButton_Click(object sender, RoutedEventArgs e)
         {
-            string jsonDumpFilePath = ChooseFile("Select the JSON dump file", ".json.gz");
+            string jsonDumpFilePath = ChooseFile("Select the JSON dump file", "Compressed JSON dump", "json.gz");
             if (string.IsNullOrEmpty(jsonDumpFilePath))
                 return;
 
